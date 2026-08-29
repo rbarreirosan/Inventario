@@ -135,6 +135,7 @@ ul { list-style: none; margin: 0; padding: 0; }
 .pill { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
 .pill-rojo { background: var(--rojo-suave); color: var(--rojo); }
 .pill-gris { background: var(--gris-suave); color: var(--gris-prov); }
+.pill-marca { background: var(--tinta); color: #fff; }
 
 /* ---------- Captura ---------- */
 .captura-head {
@@ -187,7 +188,9 @@ ul { list-style: none; margin: 0; padding: 0; }
 .grupo { margin-bottom: 14px; }
 .grupo h4 { font-size: 14px; font-weight: 800; margin-bottom: 6px; color: var(--tinta); }
 .res-fila { display: flex; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--linea); border-radius: var(--r-sm); padding: 8px 12px; margin-bottom: 6px; }
-.res-desc { flex: 1; font-size: 14px; }
+.res-desc { flex: 1; font-size: 14px; min-width: 0; }
+.res-nombre { font-weight: 700; }
+.res-sub { font-size: 12px; color: var(--suave); margin-top: 1px; }
 .res-campo { font-size: 11px; font-weight: 700; color: var(--suave); text-transform: uppercase; display: flex; flex-direction: column; gap: 3px; text-align:center; }
 .res-campo input { width: 62px; height: 40px; text-align: center; font-size: 17px; font-weight: 700; border: 1.5px solid var(--linea); border-radius: var(--r-sm); color: var(--tinta); }
 .res-cajas input { border-color: #F0C4C4; color: var(--rojo); }

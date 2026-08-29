@@ -119,12 +119,13 @@ const PDFReporte = (() => {
       y += 12;
 
       g.items.forEach(i => {
-        y = asegurarEspacio(doc, y, margen, 22);
+        y = asegurarEspacio(doc, y, margen, 26);
+        // Nombre del producto (línea principal)
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
         doc.setTextColor(...COLORES.tinta);
-        const desc = [i.categoria, i.presentacion].filter(Boolean).join(' · ');
-        doc.text(desc || i.codigo_barras || '—', x0, y, { maxWidth: colExist - x0 - 10 });
+        const nombre = i.nombre || [i.categoria, i.presentacion].filter(Boolean).join(' · ') || i.codigo_barras || '—';
+        doc.text(String(nombre), x0, y, { maxWidth: colExist - x0 - 10 });
 
         doc.setFont('helvetica', 'bold');
         doc.text(String(i.existencia ?? ''), colExist, y);
@@ -133,6 +134,18 @@ const PDFReporte = (() => {
           doc.setTextColor(...(Number(c) > 0 ? COLORES.rojo : COLORES.suave));
           doc.text(c === '' || c == null ? '—' : String(c), colCajas, y);
           doc.setTextColor(...COLORES.tinta);
+        }
+
+        // Subtítulo (presentación · categoría) si hay nombre
+        if (i.nombre) {
+          const sub = [i.presentacion, i.categoria].filter(Boolean).join(' · ');
+          if (sub) {
+            y += 11;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(...COLORES.suave);
+            doc.text(sub, x0, y);
+          }
         }
         y += 16;
       });

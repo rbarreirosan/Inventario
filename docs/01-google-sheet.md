@@ -29,28 +29,34 @@ Abajo del todo verás una pestaña que dice **"Hoja 1"**.
 
    ⚠️ Respeta el acento en la **á**. Debe decir `Catálogo`, no `Catalogo`.
 
-2. En la **fila 1** (la primera), escribe estos 5 títulos, uno en cada columna
-   (columnas A, B, C, D, E):
+2. En la **fila 1** (la primera), escribe estos 6 títulos, uno en cada columna
+   (columnas A, B, C, D, E, F):
 
-   | A | B | C | D | E |
-   |---|---|---|---|---|
-   | codigo_barras | marca | origen | categoria | presentacion |
+   | A | B | C | D | E | F |
+   |---|---|---|---|---|---|
+   | codigo_barras | nombre | marca | origen | categoria | presentacion |
 
    👉 Escríbelos **sin acentos ni espacios** tal como están arriba
    (`codigo_barras`, `categoria`, `presentacion`). Así la app los entiende bien.
 
+   > 💡 El orden de las columnas **no importa**: la app las reconoce por su
+   > nombre de título. Si ya tenías columnas creadas, solo agrega la de
+   > **`nombre`** donde quieras (por ejemplo, al final en la columna F).
+
 3. A partir de la **fila 2**, empieza a capturar tus productos. Ejemplo:
 
-   | codigo_barras | marca | origen | categoria | presentacion |
-   |---------------|----------|-----------|-------------|-------|
-   | 7501234500011 | Eurolub | Almacén | Aceite | 1 L |
-   | 7501234500059 | Chevron | Proveedor | Aceite | 1 L |
-   | 7501234500097 | Prestone | Proveedor | Refrigerante | 1 L |
+   | codigo_barras | nombre | marca | origen | categoria | presentacion |
+   |---------------|--------|----------|-----------|-------------|-------|
+   | 4025377226057 | 0W-20 Super Eco | Eurolub | Almacén | Aceite | 5 L |
+   | 7501234500059 | Supreme 20W-50 | Chevron | Proveedor | Aceite | 1 L |
+   | 7501234500097 | Anticongelante 50/50 | Prestone | Proveedor | Refrigerante | 1 L |
 
 ### Qué poner en cada columna
 
 - **codigo_barras**: el número que aparece bajo el código de barras del producto.
   (Puedes escanearlo con la app más adelante para verlo, o teclearlo a mano.)
+- **nombre**: el nombre del producto para identificarlo de un vistazo, por
+  ejemplo `0W-20 Super Eco`. Es lo que verás grande en la app al capturar.
 - **marca**: la marca del producto.
 - **origen**: se llena según la marca. Usa esta tabla fija:
 

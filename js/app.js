@@ -126,14 +126,14 @@ const App = (() => {
 
   function filaCapturado(i) {
     const alm = esAlmacen(i);
-    const detalle = [i.categoria, i.presentacion].filter(Boolean).join(' · ');
+    const detalle = [i.marca, i.presentacion].filter(Boolean).join(' · ');
     const extra = alm
       ? `<span class="pill pill-rojo">${i.cajas_a_pedir ? i.cajas_a_pedir + ' cajas' : 'sin pedido'}</span>`
       : '';
     return `
       <li class="cap" data-editar="${i.id}">
         <div class="cap-main">
-          <div class="cap-marca">${esc(i.marca || '—')}</div>
+          <div class="cap-marca">${esc(i.nombre || i.marca || '—')}</div>
           <div class="cap-det">${esc(detalle)}</div>
         </div>
         <div class="cap-right">
@@ -165,7 +165,7 @@ const App = (() => {
   function renderManual(q) {
     q = q.toLowerCase().trim();
     const res = !q ? catalogo : catalogo.filter(p =>
-      [p.codigo_barras, p.marca, p.categoria, p.presentacion]
+      [p.codigo_barras, p.nombre, p.marca, p.categoria, p.presentacion]
         .join(' ').toLowerCase().includes(q));
     const cont = document.getElementById('manual-resultados');
     if (!res.length) {
@@ -175,8 +175,8 @@ const App = (() => {
     cont.innerHTML = res.slice(0, 50).map(p => `
       <li class="manual-item" data-cod="${esc(p.codigo_barras)}">
         <div>
-          <div class="cap-marca">${esc(p.marca)}</div>
-          <div class="cap-det">${esc([p.categoria, p.presentacion].filter(Boolean).join(' · '))}</div>
+          <div class="cap-marca">${esc(p.nombre || p.marca)}</div>
+          <div class="cap-det">${esc([p.marca, p.categoria, p.presentacion].filter(Boolean).join(' · '))}</div>
         </div>
         <span class="pill ${esAlmacen(p) ? 'pill-rojo' : 'pill-gris'}">${esc(p.origen || (esAlmacen(p) ? 'Almacén' : 'Proveedor'))}</span>
       </li>`).join('');
@@ -217,6 +217,7 @@ const App = (() => {
       capturaActual = {
         id: prod.id || uid(),
         codigo_barras: prod.codigo_barras || '',
+        nombre: prod.nombre || '',
         marca: prod.marca || '',
         origen: prod.origen || (esAlmacen(prod) ? 'Almacén' : 'Proveedor'),
         categoria: prod.categoria || '',
@@ -234,7 +235,8 @@ const App = (() => {
     const i = capturaActual;
     const alm = esAlmacen(i);
 
-    document.getElementById('captura-marca').textContent = i.marca || 'Producto nuevo';
+    document.getElementById('captura-marca').textContent = i.nombre || i.marca || 'Producto nuevo';
+    document.getElementById('captura-marca-pill').textContent = i.marca || '—';
     document.getElementById('captura-categoria').textContent = i.categoria || '—';
     document.getElementById('captura-presentacion').textContent = i.presentacion || '';
     document.getElementById('captura-codigo').textContent = i.codigo_barras ? '#' + i.codigo_barras : 'sin código';
@@ -267,6 +269,9 @@ const App = (() => {
       i.origen = (window.CONFIG.MARCAS_ALMACEN || []).includes(i.marca) ? 'Almacén' : 'Proveedor';
       renderCaptura(); // refresca banner y campo de cajas
     };
+    const nom = document.getElementById('nuevo-nombre');
+    nom.value = i.nombre || '';
+    nom.oninput = () => { i.nombre = nom.value; document.getElementById('captura-marca').textContent = i.nombre || i.marca || 'Producto nuevo'; };
     const cat = document.getElementById('nuevo-categoria');
     cat.value = i.categoria || '';
     cat.oninput = () => i.categoria = cat.value;
@@ -374,7 +379,10 @@ const App = (() => {
         <h4>${esc(marca)}</h4>
         ${grupos[marca].map(i => `
           <div class="res-fila" data-id="${i.id}">
-            <div class="res-desc">${esc([i.categoria, i.presentacion].filter(Boolean).join(' · ') || i.codigo_barras)}</div>
+            <div class="res-desc">
+              <div class="res-nombre">${esc(i.nombre || i.categoria || i.codigo_barras || '—')}</div>
+              <div class="res-sub">${esc([i.presentacion, i.categoria].filter(Boolean).join(' · '))}</div>
+            </div>
             <label class="res-campo">Exist.
               <input type="number" inputmode="numeric" min="0" value="${i.existencia ?? 0}" data-campo="existencia">
             </label>
@@ -423,11 +431,12 @@ const App = (() => {
     document.getElementById('catalogo-total').textContent = filas.length + ' productos';
     const tbody = document.getElementById('catalogo-body');
     if (!filas.length) {
-      tbody.innerHTML = `<tr><td colspan="4" class="vacio">Sin productos. Agrégalos en la pestaña "Catálogo" del Google Sheet.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="vacio">Sin productos. Agrégalos en la pestaña "Catálogo" del Google Sheet.</td></tr>`;
       return;
     }
     tbody.innerHTML = filas.map(p => `
       <tr>
+        <td><b>${esc(p.nombre || '—')}</b></td>
         <td><span class="pill ${esAlmacen(p) ? 'pill-rojo' : 'pill-gris'}">${esc(p.marca)}</span></td>
         <td>${esc(p.categoria)}</td>
         <td>${esc(p.presentacion)}</td>
@@ -472,7 +481,7 @@ const App = (() => {
   }
 
   function nuevoProductoDesdeCodigo(codigo) {
-    return { id: uid(), codigo_barras: (codigo || '').trim(), marca: '', origen: '', categoria: '', presentacion: '' };
+    return { id: uid(), codigo_barras: (codigo || '').trim(), nombre: '', marca: '', origen: '', categoria: '', presentacion: '' };
   }
 
   function aRegistro(i) {

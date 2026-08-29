@@ -30,19 +30,25 @@ function doGet(e) {
 
     var datos = hoja.getDataRange().getValues(); // incluye el encabezado
     var catalogo = [];
+    if (datos.length < 2) return _json({ ok: true, catalogo: [], total: 0 });
+
+    // Leemos las columnas POR NOMBRE de encabezado (no por posición),
+    // así puedes poner "nombre" y las demás columnas en el orden que quieras.
+    var idx = _indiceColumnas(datos[0]);
 
     // Empezamos en 1 para saltar la fila de encabezados.
     for (var i = 1; i < datos.length; i++) {
       var fila = datos[i];
-      var codigo = _txt(fila[0]);
+      var codigo = _txt(fila[idx.codigo_barras]);
       if (!codigo) continue; // saltar filas vacías
 
       catalogo.push({
         codigo_barras: codigo,
-        marca:         _txt(fila[1]),
-        origen:        _txt(fila[2]),
-        categoria:     _txt(fila[3]),
-        presentacion:  _txt(fila[4])
+        nombre:        _txt(fila[idx.nombre]),
+        marca:         _txt(fila[idx.marca]),
+        origen:        _txt(fila[idx.origen]),
+        categoria:     _txt(fila[idx.categoria]),
+        presentacion:  _txt(fila[idx.presentacion])
       });
     }
 
@@ -114,6 +120,40 @@ function doPost(e) {
 }
 
 // ---------- utilidades internas ----------
+
+/**
+ * Recibe la fila de encabezados y devuelve en qué columna está cada campo.
+ * Acepta variaciones comunes (con/sin acento, "producto" como sinónimo de
+ * "nombre"). Si una columna no existe, devuelve -1 (se guarda como vacío).
+ */
+function _indiceColumnas(encabezados) {
+  var mapa = {};
+  for (var c = 0; c < encabezados.length; c++) {
+    mapa[_norm(encabezados[c])] = c;
+  }
+  function buscar(nombres) {
+    for (var k = 0; k < nombres.length; k++) {
+      if (mapa[nombres[k]] !== undefined) return mapa[nombres[k]];
+    }
+    return -1;
+  }
+  return {
+    codigo_barras: buscar(['codigo_barras', 'codigo', 'codigobarras', 'barcode']),
+    nombre:        buscar(['nombre', 'producto', 'descripcion']),
+    marca:         buscar(['marca']),
+    origen:        buscar(['origen']),
+    categoria:     buscar(['categoria']),
+    presentacion:  buscar(['presentacion', 'presentacion', 'presentaci'])
+  };
+}
+
+// Normaliza un encabezado: minúsculas, sin acentos ni espacios.
+function _norm(s) {
+  return String(s || '')
+    .trim().toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '') // quita acentos
+    .replace(/[\s_]+/g, '');
+}
 
 function _json(obj) {
   return ContentService
