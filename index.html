@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <title>Inventario</title>
+  <meta name="theme-color" content="#181B1F">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Inventario">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- Barra superior -->
+  <header class="topbar">
+    <h1>Inventario</h1>
+    <span class="marca-chip">ECOM · Prestone</span>
+  </header>
+
+  <!-- ============ PANTALLA: CONTEO ============ -->
+  <section id="screen-conteo" class="screen active">
+    <div id="aviso-demo" class="aviso-demo" hidden>
+      <b>Modo demo.</b> Aún no conectas tu Google Sheet: se usa un catálogo de ejemplo y los conteos
+      no se guardan en la nube. Pega tu URL en <code>js/config.js</code> para activarlo.
+    </div>
+
+    <div class="hero-conteo">
+      <div class="hero-top">
+        <div class="progreso">
+          <span class="num" id="progreso-num">0</span>
+          <span class="lbl">productos<br>contados</span>
+        </div>
+        <span class="fecha-chip" id="sesion-fecha">—</span>
+      </div>
+      <button class="btn-primario" id="btn-escanear">
+        <span class="ic">▣</span> Escanear
+      </button>
+      <button class="btn-secundario" id="btn-manual">＋ Agregar producto manual</button>
+    </div>
+
+    <div class="section-title">
+      Últimos capturados
+      <button class="link-mini" id="btn-refrescar-catalogo">Actualizar catálogo</button>
+    </div>
+    <ul class="lista-cap" id="lista-capturados"></ul>
+  </section>
+
+  <!-- ============ PANTALLA: CAPTURA ============ -->
+  <section id="screen-captura" class="screen">
+    <div class="captura-head">
+      <button class="btn-volver" id="btn-captura-volver">‹ Volver</button>
+    </div>
+
+    <div class="captura-card">
+      <div class="captura-title" id="captura-marca">—</div>
+      <div class="captura-pills">
+        <span class="pill pill-gris" id="captura-categoria">—</span>
+        <span class="pill pill-gris" id="captura-presentacion"></span>
+      </div>
+      <div class="captura-codigo" id="captura-codigo"></div>
+
+      <div class="banner banner-gris" id="captura-banner"></div>
+
+      <!-- Solo visible para productos nuevos (fuera de catálogo) -->
+      <div class="edicion-nuevo" id="captura-edicion" hidden>
+        <div class="campo">
+          <label>Marca</label>
+          <select id="nuevo-marca"></select>
+        </div>
+        <div class="campo">
+          <label>Categoría</label>
+          <input id="nuevo-categoria" placeholder="Aceite, Refrigerante, Aditivo…">
+        </div>
+        <div class="campo">
+          <label>Presentación</label>
+          <input id="nuevo-presentacion" placeholder="1 L, 4 L, 250 ml…">
+        </div>
+      </div>
+
+      <!-- Existencia física -->
+      <div class="campo-num">
+        <div class="campo-label">Existencia física</div>
+        <div class="stepper">
+          <button class="step-btn" id="exist-menos" aria-label="restar">−</button>
+          <input class="step-input" id="exist-val" type="number" inputmode="numeric" min="0" value="0">
+          <button class="step-btn" id="exist-mas" aria-label="sumar">+</button>
+        </div>
+      </div>
+
+      <!-- Cajas a pedir (solo Almacén) -->
+      <div class="campo-num cajas-wrap" id="cajas-wrap" hidden>
+        <div class="campo-label" style="color:var(--rojo)">Cajas a pedir</div>
+        <div class="stepper">
+          <button class="step-btn" id="cajas-menos" aria-label="restar">−</button>
+          <input class="step-input" id="cajas-val" type="number" inputmode="numeric" min="0" placeholder="0">
+          <button class="step-btn" id="cajas-mas" aria-label="sumar">+</button>
+        </div>
+      </div>
+
+      <div class="captura-acciones">
+        <button class="btn-primario" id="btn-guardar-siguiente"><span class="ic">▣</span> Guardar y escanear siguiente</button>
+        <button class="btn-secundario" id="btn-guardar">Guardar y volver a la lista</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PANTALLA: RESUMEN ============ -->
+  <section id="screen-resumen" class="screen">
+    <div class="section-title">Resumen del conteo</div>
+    <p id="resumen-vacio" class="vacio" hidden>Aún no hay productos capturados.</p>
+
+    <div class="res-seccion">
+      <div class="res-cabecera rojo"><span>▦</span> Para pedir a almacén</div>
+      <div id="resumen-almacen"></div>
+    </div>
+
+    <div class="res-seccion">
+      <div class="res-cabecera gris"><span>▤</span> Reporte a proveedor</div>
+      <div id="resumen-proveedor"></div>
+    </div>
+
+    <div class="acciones-resumen">
+      <button class="btn-primario" id="btn-generar-pdf"><span class="ic">⤓</span> Generar PDF</button>
+      <button class="btn-secundario" id="btn-sync-sheet">Enviar todo a Google Sheets</button>
+      <button class="btn-secundario" id="btn-nueva-sesion">Empezar conteo nuevo</button>
+    </div>
+  </section>
+
+  <!-- ============ PANTALLA: CATÁLOGO ============ -->
+  <section id="screen-catalogo" class="screen">
+    <div class="section-title">Catálogo de productos</div>
+    <div class="filtros">
+      <select id="filtro-marca"></select>
+      <select id="filtro-categoria"></select>
+    </div>
+    <div class="cat-count" id="catalogo-total">—</div>
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Marca</th><th>Categoría</th><th>Present.</th><th>Código</th></tr></thead>
+        <tbody id="catalogo-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Badge de pendientes por enviar -->
+  <div class="badge-flotante" id="badge-pendientes" hidden></div>
+
+  <!-- Nav inferior -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <button class="nav-btn active" data-nav="conteo"><span class="ic">▣</span> Conteo</button>
+    <button class="nav-btn" data-nav="resumen"><span class="ic">▤</span> Resumen</button>
+    <button class="nav-btn" data-nav="catalogo"><span class="ic">☰</span> Catálogo</button>
+  </nav>
+</div>
+
+<!-- Overlay del escáner -->
+<div class="scanner-overlay" id="scanner-overlay" hidden>
+  <div class="scanner-top">
+    <b>Escanea el código de barras</b>
+    <button class="btn-cerrar-scanner" id="btn-cerrar-scanner">Cerrar</button>
+  </div>
+  <div id="scanner-reader"></div>
+  <div class="scanner-error" id="scanner-error" hidden></div>
+  <div class="scanner-hint">Apunta al código de barras del producto</div>
+</div>
+
+<!-- Modal: agregar manual -->
+<div class="modal" id="modal-manual" hidden>
+  <div class="modal-bg" id="btn-cerrar-manual-bg"></div>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>Agregar producto manual</h3>
+      <button class="btn-volver" id="btn-cerrar-manual">Cerrar</button>
+    </div>
+    <div class="modal-buscar">
+      <input id="manual-buscar" placeholder="Buscar por marca, categoría o código…" autocomplete="off">
+    </div>
+    <ul class="modal-lista" id="manual-resultados"></ul>
+    <div class="modal-foot">
+      <button class="btn-secundario" id="btn-nuevo-producto">＋ Crear producto que no está en el catálogo</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Librerías externas (CDN) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- App -->
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/scanner.js"></script>
+<script src="js/pdf.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
