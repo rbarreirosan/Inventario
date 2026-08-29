@@ -10,7 +10,7 @@
  */
 window.CONFIG = {
   // Ejemplo: 'https://script.google.com/macros/s/AKfy...MUY-LARGO.../exec'
-  API_URL: '',
+  API_URL: 'https://script.google.com/macros/s/AKfycbxMNvX536hDaaa8ZXGnbWG3Jtjc5tvYVOzIM5gl0Rr8kNRfZbMqFMXvEUa_1gHNI3Nh/exec',
 
   // Marcas de "Almacén" (a estas se les pide "Cajas a pedir").
   // El resto se tratan como "Proveedor". Esto es solo un respaldo:
