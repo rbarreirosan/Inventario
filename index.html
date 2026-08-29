@@ -138,6 +138,9 @@
   <!-- ============ PANTALLA: CATÁLOGO ============ -->
   <section id="screen-catalogo" class="screen">
     <div class="section-title">Catálogo de productos</div>
+    <button class="btn-primario btn-rojo" id="btn-agregar-catalogo" style="margin-bottom:14px">
+      <span class="ic">＋</span> Agregar producto al catálogo
+    </button>
     <div class="filtros">
       <select id="filtro-marca"></select>
       <select id="filtro-categoria"></select>
@@ -187,6 +190,44 @@
     <ul class="modal-lista" id="manual-resultados"></ul>
     <div class="modal-foot">
       <button class="btn-secundario" id="btn-nuevo-producto">＋ Crear producto que no está en el catálogo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: agregar producto al catálogo -->
+<div class="modal" id="modal-catalogo" hidden>
+  <div class="modal-bg" id="btn-cerrar-cat-bg"></div>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>Agregar al catálogo</h3>
+      <button class="btn-volver" id="btn-cerrar-cat">Cerrar</button>
+    </div>
+    <div class="modal-form">
+      <label class="form-label">Código de barras</label>
+      <div class="codigo-row">
+        <input id="cat-codigo" inputmode="numeric" placeholder="Escanea o escribe el código" autocomplete="off">
+        <button class="btn-escanear-mini" id="cat-escanear"><span class="ic">▣</span></button>
+      </div>
+
+      <label class="form-label">Nombre del producto</label>
+      <input id="cat-nombre" placeholder="0W-20 Super Eco">
+
+      <label class="form-label">Marca</label>
+      <select id="cat-marca"></select>
+      <div class="origen-hint" id="cat-origen-hint" hidden></div>
+
+      <label class="form-label">Categoría</label>
+      <input id="cat-categoria" list="cat-categorias-list" placeholder="Aceite, Refrigerante, Aditivo…">
+      <datalist id="cat-categorias-list"></datalist>
+
+      <label class="form-label">Presentación</label>
+      <input id="cat-presentacion" placeholder="1 L, 4 L, 250 ml…">
+
+      <label class="form-label">Precio <span class="opcional">(opcional)</span></label>
+      <input id="cat-precio" inputmode="decimal" placeholder="189.00">
+    </div>
+    <div class="modal-foot">
+      <button class="btn-primario btn-rojo" id="btn-guardar-catalogo">Guardar en el catálogo</button>
     </div>
   </div>
 </div>

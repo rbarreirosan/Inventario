@@ -77,6 +77,11 @@ function doPost(e) {
       cuerpo = JSON.parse(e.postData.contents);
     }
 
+    // Si la app pide agregar/actualizar un producto del CATÁLOGO:
+    if (cuerpo.accion === 'agregar_catalogo') {
+      return agregarACatalogo(cuerpo.producto || {});
+    }
+
     var registros = [];
     if (cuerpo.registros && cuerpo.registros.length) {
       registros = cuerpo.registros;
@@ -117,6 +122,63 @@ function doPost(e) {
     return _json({ ok: true, guardados: registros.length });
   } catch (err) {
     return _json({ ok: false, error: String(err) });
+  }
+}
+
+/**
+ * Agrega (o actualiza) un producto en la pestaña "Catálogo".
+ * Si el código de barras ya existe, actualiza esa fila; si no, agrega una nueva.
+ * Escribe cada dato en su columna correcta según los encabezados.
+ *
+ * producto = { codigo_barras, nombre, marca, origen, categoria, presentacion, precio }
+ * Devuelve: { ok:true, actualizado:true|false }
+ */
+function agregarACatalogo(producto) {
+  var codigo = _txt(producto.codigo_barras);
+  if (!codigo) return _json({ ok: false, error: 'Falta el código de barras' });
+  if (!_txt(producto.marca)) return _json({ ok: false, error: 'Falta la marca' });
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName(HOJA_CATALOGO);
+  if (!hoja) return _json({ ok: false, error: 'No existe la pestaña "' + HOJA_CATALOGO + '"' });
+
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var datos = hoja.getDataRange().getValues();
+    var idx = _indiceColumnas(datos[0]);
+    var numCols = datos[0].length;
+
+    // Arma la fila respetando la posición de cada columna.
+    function ponerEn(fila, col, valor) { if (col >= 0) fila[col] = valor; }
+    function nuevaFila(base) {
+      var fila = base ? base.slice() : new Array(numCols).fill('');
+      ponerEn(fila, idx.codigo_barras, codigo);
+      ponerEn(fila, idx.nombre,        _txt(producto.nombre));
+      ponerEn(fila, idx.marca,         _txt(producto.marca));
+      ponerEn(fila, idx.origen,        _txt(producto.origen));
+      ponerEn(fila, idx.categoria,     _txt(producto.categoria));
+      ponerEn(fila, idx.presentacion,  _txt(producto.presentacion));
+      ponerEn(fila, idx.precio,        _txt(producto.precio));
+      return fila;
+    }
+
+    // ¿Ya existe ese código? -> actualizar esa fila.
+    for (var i = 1; i < datos.length; i++) {
+      if (_txt(datos[i][idx.codigo_barras]) === codigo) {
+        var actualizada = nuevaFila(datos[i]);
+        hoja.getRange(i + 1, 1, 1, numCols).setValues([actualizada]);
+        return _json({ ok: true, actualizado: true });
+      }
+    }
+
+    // No existe -> agregar al final.
+    hoja.getRange(hoja.getLastRow() + 1, 1, 1, numCols).setValues([nuevaFila(null)]);
+    return _json({ ok: true, actualizado: false });
+  } catch (err) {
+    return _json({ ok: false, error: String(err) });
+  } finally {
+    lock.releaseLock();
   }
 }
 

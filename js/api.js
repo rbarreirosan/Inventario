@@ -31,6 +31,10 @@ const API = (() => {
     }
 
     if (modoDemo()) {
+      // En demo no hay servidor: si ya hay catálogo cacheado (con posibles
+      // altas del usuario), lo conservamos; si no, generamos el de ejemplo.
+      const cache = leerCache();
+      if (cache && cache.length) return cache;
       const demo = catalogoDemo();
       guardarCache(demo);
       return demo;
@@ -88,6 +92,31 @@ const API = (() => {
     }
   }
 
+  // --- Agregar / actualizar un producto en el catálogo -------------
+
+  // producto = {codigo_barras, nombre, marca, origen, categoria, presentacion, precio}
+  async function agregarProducto(producto) {
+    if (!producto || !producto.codigo_barras) throw new Error('Falta el código de barras');
+
+    if (modoDemo()) {
+      // Sin backend: solo lo agregamos al catálogo cacheado localmente.
+      const cache = leerCache() || [];
+      const i = cache.findIndex(p => String(p.codigo_barras) === String(producto.codigo_barras));
+      if (i >= 0) cache[i] = { ...cache[i], ...producto }; else cache.push(producto);
+      guardarCache(cache);
+      return { ok: true, demo: true };
+    }
+
+    const resp = await fetch(apiUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ accion: 'agregar_catalogo', producto })
+    });
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error || 'No se pudo guardar el producto');
+    return data;
+  }
+
   // --- Cola de pendientes (offline) --------------------------------
 
   function leerCola() {
@@ -141,5 +170,5 @@ const API = (() => {
     ];
   }
 
-  return { getCatalogo, guardarConteo, sincronizarPendientes, pendientes, modoDemo };
+  return { getCatalogo, guardarConteo, agregarProducto, sincronizarPendientes, pendientes, modoDemo };
 })();

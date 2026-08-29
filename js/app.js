@@ -418,6 +418,79 @@ const App = (() => {
   function conectarCatalogo() {
     document.getElementById('filtro-marca').addEventListener('change', renderCatalogo);
     document.getElementById('filtro-categoria').addEventListener('change', renderCatalogo);
+    document.getElementById('btn-agregar-catalogo').addEventListener('click', () => abrirCatalogoModal());
+    document.getElementById('btn-cerrar-cat').addEventListener('click', cerrarCatalogoModal);
+    document.getElementById('btn-cerrar-cat-bg').addEventListener('click', cerrarCatalogoModal);
+    document.getElementById('cat-escanear').addEventListener('click', () => {
+      Scanner.abrir(codigo => { document.getElementById('cat-codigo').value = codigo; });
+    });
+    document.getElementById('cat-marca').addEventListener('change', actualizarOrigenHint);
+    document.getElementById('btn-guardar-catalogo').addEventListener('click', guardarEnCatalogo);
+  }
+
+  function abrirCatalogoModal(codigoInicial = '') {
+    // Poblar marca
+    const marcas = [...(window.CONFIG.MARCAS_ALMACEN || []), ...(window.CONFIG.MARCAS_PROVEEDOR || [])];
+    document.getElementById('cat-marca').innerHTML =
+      `<option value="">Elige marca…</option>` + marcas.map(m => `<option>${esc(m)}</option>`).join('');
+    // Sugerencias de categoría (las que ya existen)
+    const cats = [...new Set(catalogo.map(p => p.categoria).filter(Boolean))].sort();
+    document.getElementById('cat-categorias-list').innerHTML = cats.map(c => `<option value="${esc(c)}">`).join('');
+    // Limpiar campos
+    ['cat-codigo', 'cat-nombre', 'cat-categoria', 'cat-presentacion', 'cat-precio'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('cat-codigo').value = codigoInicial;
+    document.getElementById('cat-origen-hint').hidden = true;
+    document.getElementById('modal-catalogo').hidden = false;
+  }
+
+  function cerrarCatalogoModal() {
+    document.getElementById('modal-catalogo').hidden = true;
+  }
+
+  function actualizarOrigenHint() {
+    const marca = document.getElementById('cat-marca').value;
+    const hint = document.getElementById('cat-origen-hint');
+    if (!marca) { hint.hidden = true; return; }
+    const esAlm = (window.CONFIG.MARCAS_ALMACEN || []).includes(marca);
+    hint.hidden = false;
+    hint.className = 'origen-hint ' + (esAlm ? 'origen-almacen' : 'origen-proveedor');
+    hint.textContent = esAlm
+      ? 'Origen: Almacén (se le pedirán cajas al contar)'
+      : 'Origen: Proveedor (solo se reporta existencia)';
+  }
+
+  async function guardarEnCatalogo() {
+    const codigo = document.getElementById('cat-codigo').value.trim();
+    const marca = document.getElementById('cat-marca').value;
+    const nombre = document.getElementById('cat-nombre').value.trim();
+    if (!codigo) { toast('Escanea o escribe el código de barras.'); return; }
+    if (!marca) { toast('Elige una marca.'); return; }
+
+    const esAlm = (window.CONFIG.MARCAS_ALMACEN || []).includes(marca);
+    const producto = {
+      codigo_barras: codigo,
+      nombre,
+      marca,
+      origen: esAlm ? 'Almacén' : 'Proveedor',
+      categoria: document.getElementById('cat-categoria').value.trim(),
+      presentacion: document.getElementById('cat-presentacion').value.trim(),
+      precio: document.getElementById('cat-precio').value.trim()
+    };
+
+    const btn = document.getElementById('btn-guardar-catalogo');
+    btn.disabled = true;
+    toast('Guardando en el catálogo…');
+    try {
+      const r = await API.agregarProducto(producto);
+      await cargarCatalogo({ forzar: true });
+      renderCatalogo();
+      cerrarCatalogoModal();
+      toast(r.actualizado ? 'Producto actualizado ✓' : 'Producto agregado al catálogo ✓');
+    } catch (err) {
+      toast('No se pudo guardar: ' + (err.message || 'revisa tu conexión'));
+    } finally {
+      btn.disabled = false;
+    }
   }
 
   function renderCatalogo() {
