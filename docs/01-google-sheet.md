@@ -29,27 +29,32 @@ Abajo del todo verás una pestaña que dice **"Hoja 1"**.
 
    ⚠️ Respeta el acento en la **á**. Debe decir `Catálogo`, no `Catalogo`.
 
-2. En la **fila 1** (la primera), escribe estos 6 títulos, uno en cada columna
-   (columnas A, B, C, D, E, F):
+2. En la **fila 1** (la primera), escribe estos 7 títulos, uno en cada columna
+   (columnas A, B, C, D, E, F, G):
 
-   | A | B | C | D | E | F |
-   |---|---|---|---|---|---|
-   | codigo_barras | nombre | marca | origen | categoria | presentacion |
+   | A | B | C | D | E | F | G |
+   |---|---|---|---|---|---|---|
+   | codigo_barras | nombre | marca | origen | categoria | presentacion | precio |
 
    👉 Escríbelos **sin acentos ni espacios** tal como están arriba
    (`codigo_barras`, `categoria`, `presentacion`). Así la app los entiende bien.
 
    > 💡 El orden de las columnas **no importa**: la app las reconoce por su
-   > nombre de título. Si ya tenías columnas creadas, solo agrega la de
-   > **`nombre`** donde quieras (por ejemplo, al final en la columna F).
+   > nombre de título. Si ya tenías columnas creadas, solo agrega las de
+   > **`nombre`** y **`precio`** donde quieras.
+
+   > 💵 La columna **`precio`** es **opcional**. Se ve dentro de la app (en el
+   > Catálogo y al capturar), pero **NUNCA aparece en el PDF**: el PDF solo
+   > lleva los productos y sus cantidades. Si no quieres manejar precios, puedes
+   > dejar esa columna vacía o no crearla.
 
 3. A partir de la **fila 2**, empieza a capturar tus productos. Ejemplo:
 
-   | codigo_barras | nombre | marca | origen | categoria | presentacion |
-   |---------------|--------|----------|-----------|-------------|-------|
-   | 4025377226057 | 0W-20 Super Eco | Eurolub | Almacén | Aceite | 5 L |
-   | 7501234500059 | Supreme 20W-50 | Chevron | Proveedor | Aceite | 1 L |
-   | 7501234500097 | Anticongelante 50/50 | Prestone | Proveedor | Refrigerante | 1 L |
+   | codigo_barras | nombre | marca | origen | categoria | presentacion | precio |
+   |---------------|--------|----------|-----------|-------------|-------|-------|
+   | 4025377226057 | 0W-20 Super Eco | Eurolub | Almacén | Aceite | 5 L | 189.00 |
+   | 7501234500059 | Supreme 20W-50 | Chevron | Proveedor | Aceite | 1 L | 165.00 |
+   | 7501234500097 | Anticongelante 50/50 | Prestone | Proveedor | Refrigerante | 1 L | 210.00 |
 
 ### Qué poner en cada columna
 
@@ -67,6 +72,8 @@ Abajo del todo verás una pestaña que dice **"Hoja 1"**.
 
 - **categoria**: Aceite, Refrigerante o Aditivo (o la que uses).
 - **presentacion**: el tamaño/envase, por ejemplo `1 L`, `4 L`, `250 ml`.
+- **precio** (opcional): el precio del producto, por ejemplo `189.00` (solo el
+  número, sin el signo `$`). Se ve en la app pero **no** sale en el PDF.
 
 > 💡 **Regla importante:** el *origen* siempre depende de la *marca*, nunca del
 > producto individual. Eurolub y Gamez son siempre **Almacén**; las demás son

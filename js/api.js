@@ -127,17 +127,17 @@ const API = (() => {
 
   function catalogoDemo() {
     return [
-      { codigo_barras: '7501234500011', nombre: '0W-20 Super Eco',        marca: 'Eurolub',   origen: 'Almacén',   categoria: 'Aceite',       presentacion: '1 L' },
-      { codigo_barras: '7501234500028', nombre: '15W-40 Turbo Diesel',    marca: 'Eurolub',   origen: 'Almacén',   categoria: 'Aceite',       presentacion: '4 L' },
-      { codigo_barras: '7501234500035', nombre: 'Limpia Inyectores',      marca: 'Gamez',     origen: 'Almacén',   categoria: 'Aditivo',      presentacion: '250 ml' },
-      { codigo_barras: '7501234500042', nombre: 'Anticongelante Verde',   marca: 'Gamez',     origen: 'Almacén',   categoria: 'Refrigerante', presentacion: '1 L' },
-      { codigo_barras: '7501234500059', nombre: 'Supreme 20W-50',         marca: 'Chevron',   origen: 'Proveedor', categoria: 'Aceite',       presentacion: '1 L' },
-      { codigo_barras: '7501234500066', nombre: 'Elite 5W-30',            marca: 'Repsol',    origen: 'Proveedor', categoria: 'Aceite',       presentacion: '4 L' },
-      { codigo_barras: '7501234500073', nombre: 'MaxLife 10W-40',         marca: 'Valvoline', origen: 'Proveedor', categoria: 'Aceite',       presentacion: '1 L' },
-      { codigo_barras: '7501234500080', nombre: 'GTX 20W-50',             marca: 'Castrol',   origen: 'Proveedor', categoria: 'Aceite',       presentacion: '1 L' },
-      { codigo_barras: '7501234500097', nombre: 'Anticongelante 50/50',   marca: 'Prestone',  origen: 'Proveedor', categoria: 'Refrigerante', presentacion: '1 L' },
-      { codigo_barras: '7501234500103', nombre: 'Refrigerante Concentrado', marca: 'Prestone', origen: 'Proveedor', categoria: 'Refrigerante', presentacion: '3.78 L' },
-      { codigo_barras: '7501234500110', nombre: 'Tratamiento Motor',      marca: 'Bardhal',   origen: 'Proveedor', categoria: 'Aditivo',      presentacion: '473 ml' }
+      { codigo_barras: '7501234500011', nombre: '0W-20 Super Eco',        marca: 'Eurolub',   origen: 'Almacén',   categoria: 'Aceite',       presentacion: '1 L',    precio: '189.00' },
+      { codigo_barras: '7501234500028', nombre: '15W-40 Turbo Diesel',    marca: 'Eurolub',   origen: 'Almacén',   categoria: 'Aceite',       presentacion: '4 L',    precio: '620.00' },
+      { codigo_barras: '7501234500035', nombre: 'Limpia Inyectores',      marca: 'Gamez',     origen: 'Almacén',   categoria: 'Aditivo',      presentacion: '250 ml', precio: '95.00' },
+      { codigo_barras: '7501234500042', nombre: 'Anticongelante Verde',   marca: 'Gamez',     origen: 'Almacén',   categoria: 'Refrigerante', presentacion: '1 L',    precio: '145.00' },
+      { codigo_barras: '7501234500059', nombre: 'Supreme 20W-50',         marca: 'Chevron',   origen: 'Proveedor', categoria: 'Aceite',       presentacion: '1 L',    precio: '165.00' },
+      { codigo_barras: '7501234500066', nombre: 'Elite 5W-30',            marca: 'Repsol',    origen: 'Proveedor', categoria: 'Aceite',       presentacion: '4 L',    precio: '740.00' },
+      { codigo_barras: '7501234500073', nombre: 'MaxLife 10W-40',         marca: 'Valvoline', origen: 'Proveedor', categoria: 'Aceite',       presentacion: '1 L',    precio: '175.00' },
+      { codigo_barras: '7501234500080', nombre: 'GTX 20W-50',             marca: 'Castrol',   origen: 'Proveedor', categoria: 'Aceite',       presentacion: '1 L',    precio: '180.00' },
+      { codigo_barras: '7501234500097', nombre: 'Anticongelante 50/50',   marca: 'Prestone',  origen: 'Proveedor', categoria: 'Refrigerante', presentacion: '1 L',    precio: '210.00' },
+      { codigo_barras: '7501234500103', nombre: 'Refrigerante Concentrado', marca: 'Prestone', origen: 'Proveedor', categoria: 'Refrigerante', presentacion: '3.78 L', precio: '520.00' },
+      { codigo_barras: '7501234500110', nombre: 'Tratamiento Motor',      marca: 'Bardhal',   origen: 'Proveedor', categoria: 'Aditivo',      presentacion: '473 ml', precio: '260.00' }
     ];
   }
 

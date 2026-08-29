@@ -222,6 +222,7 @@ const App = (() => {
         origen: prod.origen || (esAlmacen(prod) ? 'Almacén' : 'Proveedor'),
         categoria: prod.categoria || '',
         presentacion: prod.presentacion || '',
+        precio: prod.precio || '',
         existencia: 0,
         cajas_a_pedir: '',
         _nuevo: esNuevo
@@ -240,6 +241,9 @@ const App = (() => {
     document.getElementById('captura-categoria').textContent = i.categoria || '—';
     document.getElementById('captura-presentacion').textContent = i.presentacion || '';
     document.getElementById('captura-codigo').textContent = i.codigo_barras ? '#' + i.codigo_barras : 'sin código';
+    const precioEl = document.getElementById('captura-precio');
+    precioEl.textContent = fmtPrecio(i.precio);
+    precioEl.hidden = !i.precio;
 
     // Banner condicional según ORIGEN (derivado de la marca).
     const banner = document.getElementById('captura-banner');
@@ -431,7 +435,7 @@ const App = (() => {
     document.getElementById('catalogo-total').textContent = filas.length + ' productos';
     const tbody = document.getElementById('catalogo-body');
     if (!filas.length) {
-      tbody.innerHTML = `<tr><td colspan="5" class="vacio">Sin productos. Agrégalos en la pestaña "Catálogo" del Google Sheet.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="vacio">Sin productos. Agrégalos en la pestaña "Catálogo" del Google Sheet.</td></tr>`;
       return;
     }
     tbody.innerHTML = filas.map(p => `
@@ -440,6 +444,7 @@ const App = (() => {
         <td><span class="pill ${esAlmacen(p) ? 'pill-rojo' : 'pill-gris'}">${esc(p.marca)}</span></td>
         <td>${esc(p.categoria)}</td>
         <td>${esc(p.presentacion)}</td>
+        <td class="precio">${esc(fmtPrecio(p.precio))}</td>
         <td class="cod">${esc(p.codigo_barras)}</td>
       </tr>`).join('');
   }
@@ -515,6 +520,14 @@ const App = (() => {
   }
 
   function uid() { return 'x' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4); }
+
+  // Formatea el precio como moneda ($). Devuelve '' si no hay precio.
+  function fmtPrecio(p) {
+    if (p === '' || p == null) return '';
+    const n = Number(String(p).replace(/[^0-9.\-]/g, ''));
+    if (!isFinite(n)) return String(p); // si no es un número, muéstralo tal cual
+    return '$' + n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
 
   function esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, c =>

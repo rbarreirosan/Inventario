@@ -48,7 +48,8 @@ function doGet(e) {
         marca:         _txt(fila[idx.marca]),
         origen:        _txt(fila[idx.origen]),
         categoria:     _txt(fila[idx.categoria]),
-        presentacion:  _txt(fila[idx.presentacion])
+        presentacion:  _txt(fila[idx.presentacion]),
+        precio:        _txt(fila[idx.precio])
       });
     }
 
@@ -143,7 +144,8 @@ function _indiceColumnas(encabezados) {
     marca:         buscar(['marca']),
     origen:        buscar(['origen']),
     categoria:     buscar(['categoria']),
-    presentacion:  buscar(['presentacion', 'presentacion', 'presentaci'])
+    presentacion:  buscar(['presentacion', 'presentacion', 'presentaci']),
+    precio:        buscar(['precio', 'costo', 'preciounitario'])
   };
 }
 
