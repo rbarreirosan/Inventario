@@ -18,8 +18,8 @@
   --bg:          #F6F7F9;
   --panel:       #FFFFFF;
 
-  /* Acción primaria */
-  --accent:      #181B1F;
+  /* Acción primaria (color de marca = rojo) */
+  --accent:      #C92A2A;
   --accent-txt:  #FFFFFF;
 
   /* Tipografía */
@@ -220,7 +220,7 @@ td.cod { color: var(--suave); font-variant-numeric: tabular-nums; }
 }
 .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--suave); font-size: 11px; font-weight: 600; }
 .nav-btn .ic { font-size: 22px; line-height: 1; }
-.nav-btn.active { color: var(--tinta); }
+.nav-btn.active { color: var(--rojo); }
 .nav-btn.active .ic { transform: translateY(-1px); }
 
 /* ---------- Scanner overlay ---------- */
