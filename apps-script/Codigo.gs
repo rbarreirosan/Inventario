@@ -81,7 +81,12 @@ function doGet(e) {
 function doPost(e) {
   try {
     var cuerpo = {};
-    if (e && e.postData && e.postData.contents) {
+    // La app puede enviar el dato de dos formas:
+    //  1) como campo de formulario "data" (método a prueba de CORS), o
+    //  2) como cuerpo de texto plano (método anterior).
+    if (e && e.parameter && e.parameter.data) {
+      cuerpo = JSON.parse(e.parameter.data);
+    } else if (e && e.postData && e.postData.contents) {
       cuerpo = JSON.parse(e.postData.contents);
     }
 

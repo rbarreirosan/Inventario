@@ -21,20 +21,49 @@ const API = (() => {
     return apiUrl() === '';
   }
 
-  // Envía datos al Apps Script en modo "no-cors".
-  // iOS/Safari a veces bloquea la LECTURA de la respuesta de Apps Script
-  // (por su redirección interna) y lanza "Load failed", aunque el dato SÍ
-  // llegue. Con no-cors mandamos el dato sin intentar leer la respuesta
-  // (queda "opaca"): si el fetch no lanza, se entregó. Como el backend es
-  // idempotente (actualiza en vez de duplicar), reenviar es seguro.
-  async function postText(payload) {
-    await fetch(apiUrl(), {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
+  // Envía datos al Apps Script con un FORMULARIO OCULTO hacia un iframe.
+  // En iOS/Safari, fetch (incluso no-cors) a veces lanza "Load failed" al
+  // hablar con Apps Script por su redirección interna. El envío por
+  // formulario NO está sujeto a CORS (es una "navegación"), así que siempre
+  // entrega el dato. No podemos leer la respuesta (iframe de otro dominio),
+  // pero no la necesitamos: el backend es idempotente y confirmamos por el
+  // Historial / Google Sheet.
+  function postText(payload) {
+    return new Promise(resolve => {
+      let listo = false;
+      const terminar = () => { if (!listo) { listo = true; resolve({ ok: true }); } };
+      try {
+        const nombre = 'inv_sink_' + Math.random().toString(36).slice(2);
+        const iframe = document.createElement('iframe');
+        iframe.name = nombre;
+        iframe.style.display = 'none';
+        iframe.addEventListener('load', terminar);
+        document.body.appendChild(iframe);
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = apiUrl();
+        form.target = nombre;
+        form.style.display = 'none';
+        const campo = document.createElement('input');
+        campo.type = 'hidden';
+        campo.name = 'data';
+        campo.value = JSON.stringify(payload);
+        form.appendChild(campo);
+        document.body.appendChild(form);
+        form.submit();
+
+        // Limpieza y respaldo por tiempo (por si el iframe cross-origin
+        // no dispara "load" de forma legible).
+        setTimeout(() => {
+          terminar();
+          try { form.remove(); } catch {}
+          try { iframe.remove(); } catch {}
+        }, 3000);
+      } catch (e) {
+        terminar(); // nunca bloqueamos la app
+      }
     });
-    return { ok: true };
   }
 
   // --- Catálogo -----------------------------------------------------
@@ -91,14 +120,14 @@ const API = (() => {
       return { ok: true, guardados: registros.length, demo: true };
     }
 
-    try {
-      await postText({ registros });
-      return { ok: true, guardados: registros.length };
-    } catch (err) {
-      // Sin conexión: guardar en la cola para reintentar luego.
+    // Sin conexión: guardar en la cola para reintentar al volver la señal.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       encolar(registros);
-      throw err;
+      throw new Error('sin conexión');
     }
+
+    await postText({ registros });
+    return { ok: true, guardados: registros.length };
   }
 
   // --- Agregar / actualizar un producto en el catálogo -------------

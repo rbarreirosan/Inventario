@@ -12,6 +12,7 @@
  */
 const App = (() => {
   const SESION = 'inv_sesion';
+  const APP_VERSION = 'v9';
 
   let catalogo = [];
   let porCodigo = new Map();
@@ -22,6 +23,8 @@ const App = (() => {
   // Arranque
   // ---------------------------------------------------------------
   async function init() {
+    const vEl = document.getElementById('app-version');
+    if (vEl) vEl.textContent = APP_VERSION;
     registrarSW();
     conectarNav();
     conectarConteo();
@@ -353,7 +356,7 @@ const App = (() => {
         toast('Guardando copia en Drive…');
         try {
           await API.guardarPDF(sesion.fecha, base64, etiqueta);
-          toast('PDF guardado en tu Drive ✓ (aparece en Historial)');
+          toast('PDF enviado a Drive ✓ — revísalo en Historial (' + APP_VERSION + ')');
         } catch (e) {
           alert('El PDF se generó, pero falló la conexión al guardar en Drive.\n\nDetalle del error:\n' + (e && e.message ? e.message : String(e)));
         }
