@@ -21,7 +21,8 @@ const PDFReporte = (() => {
     lineaBg: [242, 243, 245]
   };
 
-  function generar({ fecha, items }) {
+  // titulo = texto opcional que describe el filtro (ej. "Eurolub", "Solo almacén").
+  function generar({ fecha, items, titulo }) {
     if (typeof window.jspdf === 'undefined') {
       alert('No se pudo cargar el generador de PDF. Revisa tu conexión.');
       return;
@@ -43,32 +44,40 @@ const PDFReporte = (() => {
     doc.setFontSize(11);
     doc.setTextColor(...COLORES.suave);
     doc.text((window.CONFIG?.TALLER_NOMBRE || 'Inventario') + '  ·  ' + fecha, margen, y);
-    y += 24;
+    y += 16;
+    // Subtítulo con el filtro elegido (si aplica).
+    if (titulo) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(...COLORES.rojo);
+      doc.text('Reporte: ' + titulo, margen, y);
+      y += 16;
+    }
+    y += 8;
 
     const almacen   = items.filter(i => esAlmacen(i));
     const proveedor = items.filter(i => !esAlmacen(i));
 
     // --- Bloque 1: Almacén (con cajas a pedir) ---
-    y = seccion(doc, 'Para pedir a almacén', COLORES.rojo, y, margen, anchoPag);
+    // Solo se muestra la sección si tiene productos (así un PDF filtrado
+    // no arrastra secciones vacías).
     if (almacen.length) {
+      y = seccion(doc, 'Para pedir a almacén', COLORES.rojo, y, margen, anchoPag);
       y = tabla(doc, agruparPorMarca(almacen), y, margen, anchoPag, true);
-    } else {
-      y = vacio(doc, 'Sin productos de almacén en este conteo.', y, margen);
+      y += 14;
     }
-    y += 14;
 
     // --- Bloque 2: Proveedor (solo existencias) ---
-    y = asegurarEspacio(doc, y, margen, 80);
-    y = seccion(doc, 'Reporte a proveedor', COLORES.gris, y, margen, anchoPag);
     if (proveedor.length) {
+      y = asegurarEspacio(doc, y, margen, 80);
+      y = seccion(doc, 'Reporte a proveedor', COLORES.gris, y, margen, anchoPag);
       y = tabla(doc, agruparPorMarca(proveedor), y, margen, anchoPag, false);
-    } else {
-      y = vacio(doc, 'Sin productos de proveedor en este conteo.', y, margen);
     }
 
     piePaginas(doc, margen, anchoPag);
 
-    const nombre = 'conteo-' + fecha + '.pdf';
+    const suf = titulo ? '-' + titulo.replace(/[^A-Za-z0-9]+/g, '') : '';
+    const nombre = 'conteo-' + fecha + suf + '.pdf';
     doc.save(nombre); // descarga/comparte en el teléfono
 
     // Devolvemos el PDF en base64 para poder guardar una copia en Drive.

@@ -264,8 +264,11 @@ function guardarPDF(datos) {
   var coma = b64.indexOf(',');
   if (b64.substring(0, 5) === 'data:' && coma >= 0) b64 = b64.substring(coma + 1);
 
+  // La etiqueta (ej. "Eurolub", "Proveedor") permite tener varios PDFs por día
+  // sin que se reemplacen entre sí. Solo se reemplaza el del mismo día + etiqueta.
+  var etiqueta = _txt(datos.etiqueta).replace(/[^A-Za-z0-9]+/g, '');
   var bytes = Utilities.base64Decode(b64);
-  var nombre = 'conteo-' + fecha + '.pdf';
+  var nombre = 'conteo-' + fecha + (etiqueta ? '-' + etiqueta : '') + '.pdf';
   var blob = Utilities.newBlob(bytes, 'application/pdf', nombre);
 
   var folder = _carpetaPDF();
@@ -291,17 +294,19 @@ function historial() {
   while (it.hasNext()) {
     var f = it.next();
     var nombre = f.getName();
-    var m = nombre.match(/(\d{4}-\d{2}-\d{2})/);
+    // conteo-YYYY-MM-DD[-Etiqueta].pdf
+    var m = nombre.match(/^conteo-(\d{4}-\d{2}-\d{2})(?:-(.+))?\.pdf$/i);
     arr.push({
       nombre: nombre,
-      fecha: m ? m[1] : '',
+      fecha: m ? m[1] : (nombre.match(/(\d{4}-\d{2}-\d{2})/) || ['', ''])[1],
+      etiqueta: m && m[2] ? m[2] : '',
       url: f.getUrl(),
       id: f.getId(),
       actualizado: f.getLastUpdated().toISOString()
     });
   }
   arr.sort(function (a, b) {
-    return (b.fecha + b.actualizado).localeCompare(a.fecha + a.actualizado);
+    return (b.fecha + '|' + b.actualizado).localeCompare(a.fecha + '|' + a.actualizado);
   });
   return _json({ ok: true, archivos: arr });
 }

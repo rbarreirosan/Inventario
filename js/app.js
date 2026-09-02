@@ -343,12 +343,16 @@ const App = (() => {
   function conectarResumen() {
     document.getElementById('btn-generar-pdf').addEventListener('click', async () => {
       if (!sesion.items.length) { toast('No hay productos para el PDF.'); return; }
-      const base64 = PDFReporte.generar({ fecha: sesion.fecha, items: sesion.items });
+      const scope = document.getElementById('pdf-scope').value || 'todo';
+      const { items, titulo, etiqueta } = filtrarParaPDF(scope);
+      if (!items.length) { toast('No hay productos de ese tipo en el conteo.'); return; }
+
+      const base64 = PDFReporte.generar({ fecha: sesion.fecha, items, titulo });
       // Guardar una copia en Google Drive (si hay Sheet conectado).
       if (!API.modoDemo() && base64) {
         toast('Guardando copia en Drive…');
         try {
-          const r = await API.guardarPDF(sesion.fecha, base64);
+          const r = await API.guardarPDF(sesion.fecha, base64, etiqueta);
           toast(r && r.ok ? 'PDF guardado en tu Drive ✓' : 'PDF listo (sin copia en Drive)');
         } catch {
           toast('PDF listo (no se pudo guardar en Drive)');
@@ -383,6 +387,36 @@ const App = (() => {
     document.getElementById('resumen-proveedor').innerHTML = bloqueResumen(prov, false);
     conectarEdicionResumen();
     document.getElementById('resumen-vacio').hidden = sesion.items.length > 0;
+    poblarScopePDF();
+  }
+
+  // Llena el selector "Generar PDF de:" según lo que haya en el conteo.
+  function poblarScopePDF() {
+    const sel = document.getElementById('pdf-scope');
+    if (!sel) return;
+    const prev = sel.value;
+    const hayAlm = sesion.items.some(esAlmacen);
+    const hayProv = sesion.items.some(i => !esAlmacen(i));
+    const marcas = [...new Set(sesion.items.map(i => i.marca).filter(Boolean))].sort();
+
+    const ops = [`<option value="todo">Todo el conteo</option>`];
+    if (hayAlm) ops.push(`<option value="almacen">Solo almacén</option>`);
+    if (hayProv) ops.push(`<option value="proveedor">Solo proveedor (compras)</option>`);
+    marcas.forEach(m => ops.push(`<option value="marca:${esc(m)}">Solo ${esc(m)}</option>`));
+    sel.innerHTML = ops.join('');
+    // Conservar la elección previa si sigue disponible.
+    if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
+  }
+
+  // Devuelve {items, titulo, etiqueta} según el filtro elegido.
+  function filtrarParaPDF(scope) {
+    if (scope === 'almacen') return { items: sesion.items.filter(esAlmacen), titulo: 'Solo almacén', etiqueta: 'Almacen' };
+    if (scope === 'proveedor') return { items: sesion.items.filter(i => !esAlmacen(i)), titulo: 'Solo proveedor', etiqueta: 'Proveedor' };
+    if (scope && scope.indexOf('marca:') === 0) {
+      const marca = scope.slice(6);
+      return { items: sesion.items.filter(i => i.marca === marca), titulo: marca, etiqueta: marca };
+    }
+    return { items: sesion.items.slice(), titulo: '', etiqueta: '' };
   }
 
   function bloqueResumen(items, conCajas) {
@@ -579,6 +613,7 @@ const App = (() => {
       <a class="hist-card" href="${esc(a.url)}" target="_blank" rel="noopener">
         <div class="hist-ic">▤</div>
         <div class="hist-fecha">${esc(fechaBonita(a.fecha))}</div>
+        <div class="hist-etiqueta">${esc(a.etiqueta ? a.etiqueta : 'Todo el conteo')}</div>
         <div class="hist-abrir">Abrir PDF</div>
       </a>`).join('');
   }

@@ -119,13 +119,14 @@ const API = (() => {
 
   // --- PDFs en Drive: guardar y listar historial -------------------
 
-  // Sube el PDF (base64) a Drive. Devuelve {ok, url, ...} o {ok:false}.
-  async function guardarPDF(fecha, base64) {
+  // Sube el PDF (base64) a Drive. `etiqueta` distingue reportes del mismo día
+  // (ej. "Eurolub", "Proveedor"). Devuelve {ok, url, ...} o {ok:false}.
+  async function guardarPDF(fecha, base64, etiqueta) {
     if (modoDemo()) return { ok: false, demo: true };
     const resp = await fetch(apiUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ accion: 'guardar_pdf', fecha, base64 })
+      body: JSON.stringify({ accion: 'guardar_pdf', fecha, base64, etiqueta: etiqueta || '' })
     });
     return resp.json();
   }
