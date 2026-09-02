@@ -8,7 +8,7 @@
  * IMPORTANTE: sube el número de versión (CACHE) cada vez que cambies
  * archivos, para que los teléfonos descarguen la versión nueva.
  */
-const CACHE = 'inventario-v7';
+const CACHE = 'inventario-v8';
 
 const ARCHIVOS = [
   './',
@@ -46,19 +46,16 @@ self.addEventListener('fetch', event => {
     return; // deja pasar la petición normal a la red
   }
 
-  // Estrategia "network-first" para el HTML, "cache-first" para el resto.
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match('./index.html'))
-    );
-    return;
-  }
-
+  // Estrategia "network-first" para TODO lo de la app: siempre intentamos
+  // traer la versión más nueva de la red y actualizamos la caché. Si no hay
+  // conexión, usamos lo último guardado (así sigue funcionando sin internet).
   event.respondWith(
-    caches.match(event.request).then(resp => resp || fetch(event.request).then(r => {
+    fetch(event.request).then(r => {
       const copia = r.clone();
       caches.open(CACHE).then(c => c.put(event.request, copia)).catch(() => {});
       return r;
-    }).catch(() => resp))
+    }).catch(() =>
+      caches.match(event.request).then(resp => resp || caches.match('./index.html'))
+    )
   );
 });
