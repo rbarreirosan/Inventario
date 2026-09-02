@@ -16,12 +16,20 @@
 var HOJA_CATALOGO = 'Catálogo';
 var HOJA_CONTEOS  = 'Conteos';
 
+// Carpeta de Google Drive donde se guardan los PDF de los conteos.
+var CARPETA_PDF = 'Inventario — Conteos (PDF)';
+
 /**
- * GET: la app llama esta función para descargar el catálogo.
- * Devuelve: { ok: true, catalogo: [ {codigo_barras, marca, origen, categoria, presentacion}, ... ] }
+ * GET: la app llama esta función para descargar el catálogo,
+ * o el historial de PDFs si se pide ?accion=historial.
  */
 function doGet(e) {
   try {
+    // Historial de PDFs guardados en Drive.
+    if (e && e.parameter && e.parameter.accion === 'historial') {
+      return historial();
+    }
+
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var hoja = ss.getSheetByName(HOJA_CATALOGO);
     if (!hoja) {
@@ -80,6 +88,11 @@ function doPost(e) {
     // Si la app pide agregar/actualizar un producto del CATÁLOGO:
     if (cuerpo.accion === 'agregar_catalogo') {
       return agregarACatalogo(cuerpo.producto || {});
+    }
+
+    // Si la app pide guardar el PDF del conteo en Google Drive:
+    if (cuerpo.accion === 'guardar_pdf') {
+      return guardarPDF(cuerpo);
     }
 
     var registros = [];
@@ -217,6 +230,80 @@ function agregarACatalogo(producto) {
   } finally {
     lock.releaseLock();
   }
+}
+
+// ---------- PDFs en Google Drive ----------
+
+/**
+ * Devuelve (creándola si no existe) la carpeta de Drive de los PDFs.
+ * Guarda su id para no buscarla cada vez.
+ */
+function _carpetaPDF() {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty('CARPETA_PDF_ID');
+  if (id) {
+    try { return DriveApp.getFolderById(id); } catch (e) { /* se recrea abajo */ }
+  }
+  var it = DriveApp.getFoldersByName(CARPETA_PDF);
+  var folder = it.hasNext() ? it.next() : DriveApp.createFolder(CARPETA_PDF);
+  props.setProperty('CARPETA_PDF_ID', folder.getId());
+  return folder;
+}
+
+/**
+ * Guarda el PDF (enviado por la app como base64) en la carpeta de Drive.
+ * Si ya había un PDF de esa misma fecha, lo reemplaza (no duplica).
+ * Devuelve: { ok:true, url, id, nombre }
+ */
+function guardarPDF(datos) {
+  var fecha = _txt(datos.fecha) || _hoy();
+  var b64 = String(datos.base64 || '');
+  if (!b64) return _json({ ok: false, error: 'No se recibió el PDF' });
+
+  // Si viene como data-uri ("data:application/pdf;base64,...."), quitamos el encabezado.
+  var coma = b64.indexOf(',');
+  if (b64.substring(0, 5) === 'data:' && coma >= 0) b64 = b64.substring(coma + 1);
+
+  var bytes = Utilities.base64Decode(b64);
+  var nombre = 'conteo-' + fecha + '.pdf';
+  var blob = Utilities.newBlob(bytes, 'application/pdf', nombre);
+
+  var folder = _carpetaPDF();
+  // Reemplazar el PDF de esa fecha si ya existía.
+  var existentes = folder.getFilesByName(nombre);
+  while (existentes.hasNext()) existentes.next().setTrashed(true);
+
+  var file = folder.createFile(blob);
+  // Cualquiera con el enlace puede verlo (para poder abrirlo desde la app).
+  try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) {}
+
+  return _json({ ok: true, url: file.getUrl(), id: file.getId(), nombre: nombre });
+}
+
+/**
+ * Lista los PDFs guardados, más nuevos primero.
+ * Devuelve: { ok:true, archivos:[ {nombre, fecha, url, id, actualizado}, ... ] }
+ */
+function historial() {
+  var folder = _carpetaPDF();
+  var it = folder.getFiles();
+  var arr = [];
+  while (it.hasNext()) {
+    var f = it.next();
+    var nombre = f.getName();
+    var m = nombre.match(/(\d{4}-\d{2}-\d{2})/);
+    arr.push({
+      nombre: nombre,
+      fecha: m ? m[1] : '',
+      url: f.getUrl(),
+      id: f.getId(),
+      actualizado: f.getLastUpdated().toISOString()
+    });
+  }
+  arr.sort(function (a, b) {
+    return (b.fecha + b.actualizado).localeCompare(a.fecha + a.actualizado);
+  });
+  return _json({ ok: true, archivos: arr });
 }
 
 // ---------- utilidades internas ----------

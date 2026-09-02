@@ -154,6 +154,17 @@
     </div>
   </section>
 
+  <!-- ============ PANTALLA: HISTORIAL ============ -->
+  <section id="screen-historial" class="screen">
+    <div class="section-title">
+      Historial de PDFs
+      <button class="link-mini" id="btn-refrescar-historial">Actualizar</button>
+    </div>
+    <p class="hist-sub">Cada PDF que generas se guarda en tu Google Drive. Aquí puedes abrir los conteos anteriores.</p>
+    <div id="historial-estado" class="vacio" hidden></div>
+    <div id="historial-grid" class="hist-grid"></div>
+  </section>
+
   <!-- Badge de pendientes por enviar -->
   <div class="badge-flotante" id="badge-pendientes" hidden></div>
 
@@ -162,6 +173,7 @@
     <button class="nav-btn active" data-nav="conteo"><span class="ic">▣</span> Conteo</button>
     <button class="nav-btn" data-nav="resumen"><span class="ic">▤</span> Resumen</button>
     <button class="nav-btn" data-nav="catalogo"><span class="ic">☰</span> Catálogo</button>
+    <button class="nav-btn" data-nav="historial"><span class="ic">◷</span> Historial</button>
   </nav>
 </div>
 

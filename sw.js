@@ -8,7 +8,7 @@
  * IMPORTANTE: sube el número de versión (CACHE) cada vez que cambies
  * archivos, para que los teléfonos descarguen la versión nueva.
  */
-const CACHE = 'inventario-v3';
+const CACHE = 'inventario-v4';
 
 const ARCHIVOS = [
   './',

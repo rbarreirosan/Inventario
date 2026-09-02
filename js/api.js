@@ -117,6 +117,33 @@ const API = (() => {
     return data;
   }
 
+  // --- PDFs en Drive: guardar y listar historial -------------------
+
+  // Sube el PDF (base64) a Drive. Devuelve {ok, url, ...} o {ok:false}.
+  async function guardarPDF(fecha, base64) {
+    if (modoDemo()) return { ok: false, demo: true };
+    const resp = await fetch(apiUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ accion: 'guardar_pdf', fecha, base64 })
+    });
+    return resp.json();
+  }
+
+  // Lista los PDFs guardados. Devuelve un array, [] si no hay,
+  // o null si el Apps Script todavía no tiene esta función (versión vieja).
+  async function getHistorial() {
+    if (modoDemo()) return null;
+    try {
+      const resp = await fetch(apiUrl() + '?accion=historial');
+      const data = await resp.json();
+      if (!data.ok || !Array.isArray(data.archivos)) return null;
+      return data.archivos;
+    } catch {
+      return null;
+    }
+  }
+
   // --- Cola de pendientes (offline) --------------------------------
 
   function leerCola() {
@@ -170,5 +197,5 @@ const API = (() => {
     ];
   }
 
-  return { getCatalogo, guardarConteo, agregarProducto, sincronizarPendientes, pendientes, modoDemo };
+  return { getCatalogo, guardarConteo, agregarProducto, guardarPDF, getHistorial, sincronizarPendientes, pendientes, modoDemo };
 })();

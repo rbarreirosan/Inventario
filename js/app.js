@@ -62,13 +62,14 @@ const App = (() => {
       b.classList.toggle('active', b.dataset.nav === pantalla);
     });
     // El nav inferior solo se muestra en pantallas principales.
-    const conNav = ['conteo', 'resumen', 'catalogo'].includes(pantalla);
+    const conNav = ['conteo', 'resumen', 'catalogo', 'historial'].includes(pantalla);
     document.getElementById('bottom-nav').hidden = !conNav;
     window.scrollTo(0, 0);
 
     if (pantalla === 'resumen') renderResumen();
     if (pantalla === 'catalogo') renderCatalogo();
     if (pantalla === 'conteo') renderConteo();
+    if (pantalla === 'historial') renderHistorial();
   }
 
   function conectarNav() {
@@ -340,9 +341,19 @@ const App = (() => {
   // Pantalla RESUMEN
   // ---------------------------------------------------------------
   function conectarResumen() {
-    document.getElementById('btn-generar-pdf').addEventListener('click', () => {
+    document.getElementById('btn-generar-pdf').addEventListener('click', async () => {
       if (!sesion.items.length) { toast('No hay productos para el PDF.'); return; }
-      PDFReporte.generar({ fecha: sesion.fecha, items: sesion.items });
+      const base64 = PDFReporte.generar({ fecha: sesion.fecha, items: sesion.items });
+      // Guardar una copia en Google Drive (si hay Sheet conectado).
+      if (!API.modoDemo() && base64) {
+        toast('Guardando copia en Drive…');
+        try {
+          const r = await API.guardarPDF(sesion.fecha, base64);
+          toast(r && r.ok ? 'PDF guardado en tu Drive ✓' : 'PDF listo (sin copia en Drive)');
+        } catch {
+          toast('PDF listo (no se pudo guardar en Drive)');
+        }
+      }
     });
     document.getElementById('btn-sync-sheet').addEventListener('click', async () => {
       toast('Enviando a Google Sheets…');
@@ -527,6 +538,58 @@ const App = (() => {
     const actual = sel.value;
     sel.innerHTML = `<option value="">${etiquetaTodos}</option>` +
       valores.map(v => `<option ${v === actual ? 'selected' : ''}>${esc(v)}</option>`).join('');
+  }
+
+  // ---------------------------------------------------------------
+  // Pantalla HISTORIAL (PDFs guardados en Drive)
+  // ---------------------------------------------------------------
+  let historialConectado = false;
+  function conectarHistorial() {
+    if (historialConectado) return;
+    historialConectado = true;
+    document.getElementById('btn-refrescar-historial').addEventListener('click', renderHistorial);
+  }
+
+  async function renderHistorial() {
+    conectarHistorial();
+    const grid = document.getElementById('historial-grid');
+    const estado = document.getElementById('historial-estado');
+    grid.innerHTML = '';
+    estado.hidden = false;
+
+    if (API.modoDemo()) {
+      estado.textContent = 'Conecta tu Google Sheet para guardar y ver PDFs.';
+      return;
+    }
+
+    estado.textContent = 'Cargando historial…';
+    const archivos = await API.getHistorial();
+
+    if (archivos === null) {
+      estado.innerHTML = 'El historial aún no está activo. Falta <b>actualizar el Apps Script</b> a la versión nueva (ver la guía). En cuanto lo hagas, aquí aparecerán tus PDFs.';
+      return;
+    }
+    if (!archivos.length) {
+      estado.textContent = 'Aún no has guardado ningún PDF. Genera uno desde Resumen y aparecerá aquí.';
+      return;
+    }
+
+    estado.hidden = true;
+    grid.innerHTML = archivos.map(a => `
+      <a class="hist-card" href="${esc(a.url)}" target="_blank" rel="noopener">
+        <div class="hist-ic">▤</div>
+        <div class="hist-fecha">${esc(fechaBonita(a.fecha))}</div>
+        <div class="hist-abrir">Abrir PDF</div>
+      </a>`).join('');
+  }
+
+  // "2026-09-02" -> "2 sep 2026"; si no hay fecha, usa el nombre.
+  function fechaBonita(iso) {
+    if (!iso) return 'Conteo';
+    const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const p = iso.split('-');
+    if (p.length !== 3) return iso;
+    return parseInt(p[2], 10) + ' ' + (meses[parseInt(p[1], 10) - 1] || '') + ' ' + p[0];
   }
 
   // ---------------------------------------------------------------

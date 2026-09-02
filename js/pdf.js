@@ -69,7 +69,14 @@ const PDFReporte = (() => {
     piePaginas(doc, margen, anchoPag);
 
     const nombre = 'conteo-' + fecha + '.pdf';
-    doc.save(nombre);
+    doc.save(nombre); // descarga/comparte en el teléfono
+
+    // Devolvemos el PDF en base64 para poder guardar una copia en Drive.
+    try {
+      return doc.output('datauristring').split(',')[1];
+    } catch {
+      return '';
+    }
   }
 
   function esAlmacen(i) {
