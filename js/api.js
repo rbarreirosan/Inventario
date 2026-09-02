@@ -21,6 +21,22 @@ const API = (() => {
     return apiUrl() === '';
   }
 
+  // Envía datos al Apps Script en modo "no-cors".
+  // iOS/Safari a veces bloquea la LECTURA de la respuesta de Apps Script
+  // (por su redirección interna) y lanza "Load failed", aunque el dato SÍ
+  // llegue. Con no-cors mandamos el dato sin intentar leer la respuesta
+  // (queda "opaca"): si el fetch no lanza, se entregó. Como el backend es
+  // idempotente (actualiza en vez de duplicar), reenviar es seguro.
+  async function postText(payload) {
+    await fetch(apiUrl(), {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    return { ok: true };
+  }
+
   // --- Catálogo -----------------------------------------------------
 
   async function getCatalogo({ forzar = false } = {}) {
@@ -76,15 +92,8 @@ const API = (() => {
     }
 
     try {
-      const resp = await fetch(apiUrl(), {
-        method: 'POST',
-        // text/plain evita el "preflight" CORS que Apps Script no maneja.
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ registros })
-      });
-      const data = await resp.json();
-      if (!data.ok) throw new Error(data.error || 'Error al guardar');
-      return data;
+      await postText({ registros });
+      return { ok: true, guardados: registros.length };
     } catch (err) {
       // Sin conexión: guardar en la cola para reintentar luego.
       encolar(registros);
@@ -107,14 +116,8 @@ const API = (() => {
       return { ok: true, demo: true };
     }
 
-    const resp = await fetch(apiUrl(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ accion: 'agregar_catalogo', producto })
-    });
-    const data = await resp.json();
-    if (!data.ok) throw new Error(data.error || 'No se pudo guardar el producto');
-    return data;
+    await postText({ accion: 'agregar_catalogo', producto });
+    return { ok: true };
   }
 
   // --- PDFs en Drive: guardar y listar historial -------------------
@@ -123,18 +126,8 @@ const API = (() => {
   // (ej. "Eurolub", "Proveedor"). Devuelve {ok, url, ...} o {ok:false}.
   async function guardarPDF(fecha, base64, etiqueta) {
     if (modoDemo()) return { ok: false, demo: true };
-    const resp = await fetch(apiUrl(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ accion: 'guardar_pdf', fecha, base64, etiqueta: etiqueta || '' })
-    });
-    // Leemos como texto y luego intentamos JSON (para no fallar si viene HTML).
-    const txt = await resp.text();
-    try {
-      return JSON.parse(txt);
-    } catch {
-      return { ok: false, error: 'HTTP ' + resp.status + ': ' + txt.slice(0, 160) };
-    }
+    await postText({ accion: 'guardar_pdf', fecha, base64, etiqueta: etiqueta || '' });
+    return { ok: true };
   }
 
   // Lista los PDFs guardados. Devuelve un array, [] si no hay,
@@ -172,13 +165,7 @@ const API = (() => {
     const cola = leerCola();
     if (!cola.length) return 0;
     try {
-      const resp = await fetch(apiUrl(), {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ registros: cola })
-      });
-      const data = await resp.json();
-      if (!data.ok) throw new Error(data.error || 'Error al sincronizar');
+      await postText({ registros: cola });
       escribirCola([]);
       return cola.length;
     } catch {

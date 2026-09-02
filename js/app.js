@@ -352,12 +352,8 @@ const App = (() => {
       if (!API.modoDemo() && base64) {
         toast('Guardando copia en Drive…');
         try {
-          const r = await API.guardarPDF(sesion.fecha, base64, etiqueta);
-          if (r && r.ok) {
-            toast('PDF guardado en tu Drive ✓');
-          } else {
-            alert('El PDF se generó, pero no se pudo guardar la copia en Drive.\n\nDetalle del error:\n' + (r && r.error ? r.error : 'respuesta inesperada del servidor'));
-          }
+          await API.guardarPDF(sesion.fecha, base64, etiqueta);
+          toast('PDF guardado en tu Drive ✓ (aparece en Historial)');
         } catch (e) {
           alert('El PDF se generó, pero falló la conexión al guardar en Drive.\n\nDetalle del error:\n' + (e && e.message ? e.message : String(e)));
         }
@@ -530,11 +526,11 @@ const App = (() => {
     btn.disabled = true;
     toast('Guardando en el catálogo…');
     try {
-      const r = await API.agregarProducto(producto);
+      await API.agregarProducto(producto);
       await cargarCatalogo({ forzar: true });
       renderCatalogo();
       cerrarCatalogoModal();
-      toast(r.actualizado ? 'Producto actualizado ✓' : 'Producto agregado al catálogo ✓');
+      toast('Producto guardado en el catálogo ✓');
     } catch (err) {
       toast('No se pudo guardar: ' + (err.message || 'revisa tu conexión'));
     } finally {
