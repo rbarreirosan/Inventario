@@ -103,18 +103,55 @@ function doPost(e) {
     var lock = LockService.getScriptLock();
     lock.waitLock(30000);
     try {
-      var filas = registros.map(function (r) {
-        return [
-          r.fecha || _hoy(),
-          _txt(r.codigo_barras),
+      var datos = hoja.getDataRange().getValues();
+
+      // Índice de los renglones que YA existen, por fecha + código de barras,
+      // para poder ACTUALIZAR en vez de duplicar.
+      var indice = {};
+      for (var i = 1; i < datos.length; i++) {
+        var f = _txt(datos[i][0]);
+        var c = _txt(datos[i][1]);
+        if (c) indice[f + '||' + c] = i + 1; // número de fila en la hoja
+      }
+
+      // Si en un mismo envío llega el mismo código varias veces, nos quedamos
+      // con el último (evita conflictos dentro del propio lote).
+      var unicos = {};
+      var soloUnicos = [];
+      registros.forEach(function (r) {
+        var cod = _txt(r.codigo_barras);
+        if (cod) {
+          var k = (r.fecha || _hoy()) + '||' + cod;
+          if (unicos[k] == null) { unicos[k] = soloUnicos.length; soloUnicos.push(r); }
+          else { soloUnicos[unicos[k]] = r; }
+        } else {
+          soloUnicos.push(r); // sin código: no se puede identificar, se agrega tal cual
+        }
+      });
+
+      var nuevos = [];
+      soloUnicos.forEach(function (r) {
+        var fecha = r.fecha || _hoy();
+        var cod = _txt(r.codigo_barras);
+        var fila = [
+          fecha,
+          cod,
           r.existencia === '' || r.existencia == null ? '' : Number(r.existencia),
           r.cajas_a_pedir === '' || r.cajas_a_pedir == null ? '' : Number(r.cajas_a_pedir)
         ];
+        var key = fecha + '||' + cod;
+        if (cod && indice[key]) {
+          // Ya existe ese producto ese día -> actualizar su renglón (no duplicar).
+          hoja.getRange(indice[key], 1, 1, 4).setValues([fila]);
+        } else {
+          nuevos.push(fila);
+        }
       });
 
-      // Escribimos todas las filas de una sola vez (más rápido).
-      var inicio = hoja.getLastRow() + 1;
-      hoja.getRange(inicio, 1, filas.length, 4).setValues(filas);
+      // Los que no existían, se agregan de una sola vez al final.
+      if (nuevos.length) {
+        hoja.getRange(hoja.getLastRow() + 1, 1, nuevos.length, 4).setValues(nuevos);
+      }
     } finally {
       lock.releaseLock();
     }
