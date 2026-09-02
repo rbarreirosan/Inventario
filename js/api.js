@@ -128,7 +128,13 @@ const API = (() => {
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ accion: 'guardar_pdf', fecha, base64, etiqueta: etiqueta || '' })
     });
-    return resp.json();
+    // Leemos como texto y luego intentamos JSON (para no fallar si viene HTML).
+    const txt = await resp.text();
+    try {
+      return JSON.parse(txt);
+    } catch {
+      return { ok: false, error: 'HTTP ' + resp.status + ': ' + txt.slice(0, 160) };
+    }
   }
 
   // Lista los PDFs guardados. Devuelve un array, [] si no hay,

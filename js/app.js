@@ -353,9 +353,13 @@ const App = (() => {
         toast('Guardando copia en Drive…');
         try {
           const r = await API.guardarPDF(sesion.fecha, base64, etiqueta);
-          toast(r && r.ok ? 'PDF guardado en tu Drive ✓' : 'PDF listo (sin copia en Drive)');
-        } catch {
-          toast('PDF listo (no se pudo guardar en Drive)');
+          if (r && r.ok) {
+            toast('PDF guardado en tu Drive ✓');
+          } else {
+            alert('El PDF se generó, pero no se pudo guardar la copia en Drive.\n\nDetalle del error:\n' + (r && r.error ? r.error : 'respuesta inesperada del servidor'));
+          }
+        } catch (e) {
+          alert('El PDF se generó, pero falló la conexión al guardar en Drive.\n\nDetalle del error:\n' + (e && e.message ? e.message : String(e)));
         }
       }
     });
