@@ -1,0 +1,15 @@
+# Cabeceras para Cloudflare Pages.
+# Evita que el navegador se quede con versiones viejas: le pide revisar
+# siempre si hay una nueva (sobre todo el service worker).
+
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/index.html
+  Cache-Control: no-cache
+
+/
+  Cache-Control: no-cache
+
+/manifest.webmanifest
+  Cache-Control: no-cache
