@@ -12,7 +12,7 @@
  */
 const App = (() => {
   const SESION = 'inv_sesion';
-  const APP_VERSION = 'v13';
+  const APP_VERSION = 'v14';
 
   let catalogo = [];
   let porCodigo = new Map();
@@ -354,25 +354,22 @@ const App = (() => {
       // Guardar una copia en Google Drive (si hay Sheet conectado).
       if (!API.modoDemo() && base64) {
         toast('Guardando copia en Drive…');
-        const antes = await contarHistorial(); // cuántos PDFs había antes
         try {
           await API.guardarPDF(sesion.fecha, base64, etiqueta);
         } catch (e) { /* el envío por formulario no lanza; seguimos a verificar */ }
 
-        // Verificamos leyendo el Historial: ¿aumentó el número de PDFs?
-        await new Promise(r => setTimeout(r, 2500));
-        const despues = await contarHistorial();
-
-        const subio = (typeof antes === 'number' && typeof despues === 'number' && despues > antes)
-                    || (antes === null && typeof despues === 'number' && despues > 0);
-        if (subio) {
+        // Verificamos con la confirmación del PROPIO servidor: su último POST
+        // debe reportar paso "pdf_ok" y reciente. Es más confiable que contar.
+        await new Promise(r => setTimeout(r, 1800));
+        const dbg = await API.getDebug();
+        const up = dbg && dbg.ultimo_post;
+        const ok = up && up.accion === 'guardar_pdf' && up.paso === 'pdf_ok'
+                 && (Date.now() - new Date(up.ts).getTime() < 90000);
+        if (ok) {
           toast('PDF guardado en Drive ✓');
           if (document.getElementById('screen-historial').classList.contains('active')) renderHistorial();
         } else {
-          // Leemos el diagnóstico DEL SERVIDOR CORRECTO (la URL configurada)
-          // para ver exactamente qué recibió, sin teclear direcciones.
-          const dbg = await API.getDebug();
-          alert('DIAGNÓSTICO (' + APP_VERSION + ')\n\nEl PDF no aparece en Drive todavía.\n\nEsto es lo que reporta TU servidor (su último POST):\n\n' + JSON.stringify(dbg, null, 2));
+          alert('DIAGNÓSTICO (' + APP_VERSION + ')\n\nEl PDF no se confirmó en Drive.\n\nEsto reporta TU servidor (su último POST):\n\n' + JSON.stringify(dbg, null, 2));
         }
       }
     });
@@ -629,7 +626,7 @@ const App = (() => {
     grid.innerHTML = archivos.map(a => `
       <a class="hist-card" href="${esc(a.url)}" target="_blank" rel="noopener">
         <div class="hist-ic">▤</div>
-        <div class="hist-fecha">${esc(fechaBonita(a.fecha))}</div>
+        <div class="hist-fecha">${esc(fechaBonita(a.fecha))}${a.hora ? ' · ' + esc(a.hora) : ''}</div>
         <div class="hist-etiqueta">${esc(a.etiqueta ? a.etiqueta : 'Todo el conteo')}</div>
         <div class="hist-abrir">Abrir PDF</div>
       </a>`).join('');

@@ -308,18 +308,17 @@ function guardarPDF(datos) {
     // Por si el "+" del base64 llegó como espacio (codificación de formulario).
     b64 = b64.replace(/ /g, '+');
 
-    // La etiqueta (ej. "Eurolub", "Proveedor") permite tener varios PDFs por día
-    // sin que se reemplacen entre sí. Solo se reemplaza el del mismo día + etiqueta.
+    // La etiqueta (ej. "Eurolub", "Proveedor") describe el reporte.
     var etiqueta = _txt(datos.etiqueta).replace(/[^A-Za-z0-9]+/g, '');
+    // La HORA en el nombre hace que CADA PDF sea único: nunca se borran
+    // entre sí, aunque sean del mismo día (se guardan todos).
+    var tz = Session.getScriptTimeZone() || 'America/Mexico_City';
+    var hora = Utilities.formatDate(new Date(), tz, 'HHmmss');
     var bytes = Utilities.base64Decode(b64);
-    var nombre = 'conteo-' + fecha + (etiqueta ? '-' + etiqueta : '') + '.pdf';
+    var nombre = 'conteo-' + fecha + '_' + hora + (etiqueta ? '-' + etiqueta : '') + '.pdf';
     var blob = Utilities.newBlob(bytes, 'application/pdf', nombre);
 
     var folder = _carpetaPDF();
-    // Reemplazar el PDF de esa fecha si ya existía.
-    var existentes = folder.getFilesByName(nombre);
-    while (existentes.hasNext()) existentes.next().setTrashed(true);
-
     var file = folder.createFile(blob);
     // Cualquiera con el enlace puede verlo (para poder abrirlo desde la app).
     try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) {}
@@ -343,12 +342,15 @@ function historial() {
   while (it.hasNext()) {
     var f = it.next();
     var nombre = f.getName();
-    // conteo-YYYY-MM-DD[-Etiqueta].pdf
-    var m = nombre.match(/^conteo-(\d{4}-\d{2}-\d{2})(?:-(.+))?\.pdf$/i);
+    // conteo-YYYY-MM-DD[_HHMMSS][-Etiqueta].pdf  (la hora es opcional para
+    // compatibilidad con PDFs viejos que no la tenían).
+    var m = nombre.match(/^conteo-(\d{4}-\d{2}-\d{2})(?:_(\d{2})(\d{2})(\d{2}))?(?:-(.+))?\.pdf$/i);
+    var hora = (m && m[2]) ? (m[2] + ':' + m[3]) : '';
     arr.push({
       nombre: nombre,
       fecha: m ? m[1] : (nombre.match(/(\d{4}-\d{2}-\d{2})/) || ['', ''])[1],
-      etiqueta: m && m[2] ? m[2] : '',
+      hora: hora,
+      etiqueta: (m && m[5]) ? m[5] : '',
       url: f.getUrl(),
       id: f.getId(),
       actualizado: f.getLastUpdated().toISOString()
