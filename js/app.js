@@ -12,7 +12,7 @@
  */
 const App = (() => {
   const SESION = 'inv_sesion';
-  const APP_VERSION = 'v14';
+  const APP_VERSION = 'v15';
 
   let catalogo = [];
   let porCodigo = new Map();
@@ -363,13 +363,18 @@ const App = (() => {
         await new Promise(r => setTimeout(r, 1800));
         const dbg = await API.getDebug();
         const up = dbg && dbg.ultimo_post;
-        const ok = up && up.accion === 'guardar_pdf' && up.paso === 'pdf_ok'
-                 && (Date.now() - new Date(up.ts).getTime() < 90000);
-        if (ok) {
+        // Éxito si el PDF LLEGÓ al servidor hace poco y NO hubo error.
+        // (No exigimos "pdf_ok" porque no todas las versiones del backend lo escriben.)
+        const reciente = up && up.accion === 'guardar_pdf'
+                       && (Date.now() - new Date(up.ts).getTime() < 90000);
+        const conError = up && (up.paso === 'pdf_ERROR' || up.paso === 'pdf_sin_base64');
+        if (reciente && !conError) {
           toast('PDF guardado en Drive ✓');
           if (document.getElementById('screen-historial').classList.contains('active')) renderHistorial();
+        } else if (conError) {
+          alert('No se pudo guardar en Drive.\n\nError del servidor: ' + (up.error || up.paso));
         } else {
-          alert('DIAGNÓSTICO (' + APP_VERSION + ')\n\nEl PDF no se confirmó en Drive.\n\nEsto reporta TU servidor (su último POST):\n\n' + JSON.stringify(dbg, null, 2));
+          alert('DIAGNÓSTICO (' + APP_VERSION + ')\n\nEl envío no llegó al servidor.\n\nÚltimo POST recibido:\n\n' + JSON.stringify(dbg, null, 2));
         }
       }
     });
