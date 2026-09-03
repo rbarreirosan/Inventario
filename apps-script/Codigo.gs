@@ -30,6 +30,12 @@ function doGet(e) {
       return _json({ ok: true, backend: 'formulario-2026-09', acepta_formulario: true });
     }
 
+    // Diagnóstico: muestra lo último que recibió el servidor en un POST.
+    if (e && e.parameter && e.parameter.accion === 'debug') {
+      var d = PropertiesService.getScriptProperties().getProperty('DEBUG');
+      return _json({ ok: true, ultimo_post: d ? JSON.parse(d) : null });
+    }
+
     // Historial de PDFs guardados en Drive.
     if (e && e.parameter && e.parameter.accion === 'historial') {
       return historial();
@@ -84,6 +90,8 @@ function doGet(e) {
  * Devuelve: { ok: true, guardados: N }
  */
 function doPost(e) {
+  // "Espía" de diagnóstico: registra qué llegó (se lee con ?accion=debug).
+  var dbg = { ts: new Date().toISOString(), origen: 'nada' };
   try {
     var cuerpo = {};
     // La app puede enviar el dato de dos formas:
@@ -91,9 +99,16 @@ function doPost(e) {
     //  2) como cuerpo de texto plano (método anterior).
     if (e && e.parameter && e.parameter.data) {
       cuerpo = JSON.parse(e.parameter.data);
+      dbg.origen = 'parameter';
     } else if (e && e.postData && e.postData.contents) {
       cuerpo = JSON.parse(e.postData.contents);
+      dbg.origen = 'postData';
     }
+    dbg.accion = cuerpo.accion || 'conteo';
+    dbg.base64_len = cuerpo.base64 ? String(cuerpo.base64).length : 0;
+    dbg.tipo = (e && e.postData) ? e.postData.type : '';
+    // Reinicio del registro de diagnóstico para ESTE POST.
+    PropertiesService.getScriptProperties().setProperty('DEBUG', JSON.stringify(dbg));
 
     // Si la app pide agregar/actualizar un producto del CATÁLOGO:
     if (cuerpo.accion === 'agregar_catalogo') {
@@ -102,7 +117,8 @@ function doPost(e) {
 
     // Si la app pide guardar el PDF del conteo en Google Drive:
     if (cuerpo.accion === 'guardar_pdf') {
-      return guardarPDF(cuerpo);
+      var r = guardarPDF(cuerpo);
+      return r;
     }
 
     var registros = [];
@@ -181,6 +197,8 @@ function doPost(e) {
 
     return _json({ ok: true, guardados: registros.length });
   } catch (err) {
+    dbg.error = String(err);
+    _guardarDebug(dbg);
     return _json({ ok: false, error: String(err) });
   }
 }
@@ -242,6 +260,19 @@ function agregarACatalogo(producto) {
   }
 }
 
+// ---------- Diagnóstico ----------
+
+// Guarda (mezclando) el último registro de diagnóstico. Se lee con ?accion=debug.
+function _guardarDebug(obj) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var prev = {};
+    try { prev = JSON.parse(props.getProperty('DEBUG') || '{}'); } catch (e) {}
+    for (var k in obj) prev[k] = obj[k];
+    props.setProperty('DEBUG', JSON.stringify(prev));
+  } catch (e) {}
+}
+
 // ---------- PDFs en Google Drive ----------
 
 /**
@@ -266,31 +297,39 @@ function _carpetaPDF() {
  * Devuelve: { ok:true, url, id, nombre }
  */
 function guardarPDF(datos) {
-  var fecha = _txt(datos.fecha) || _hoy();
-  var b64 = String(datos.base64 || '');
-  if (!b64) return _json({ ok: false, error: 'No se recibió el PDF' });
+  try {
+    var fecha = _txt(datos.fecha) || _hoy();
+    var b64 = String(datos.base64 || '');
+    if (!b64) { _guardarDebug({ paso: 'pdf_sin_base64' }); return _json({ ok: false, error: 'No se recibió el PDF' }); }
 
-  // Si viene como data-uri ("data:application/pdf;base64,...."), quitamos el encabezado.
-  var coma = b64.indexOf(',');
-  if (b64.substring(0, 5) === 'data:' && coma >= 0) b64 = b64.substring(coma + 1);
+    // Si viene como data-uri ("data:application/pdf;base64,...."), quitamos el encabezado.
+    var coma = b64.indexOf(',');
+    if (b64.substring(0, 5) === 'data:' && coma >= 0) b64 = b64.substring(coma + 1);
+    // Por si el "+" del base64 llegó como espacio (codificación de formulario).
+    b64 = b64.replace(/ /g, '+');
 
-  // La etiqueta (ej. "Eurolub", "Proveedor") permite tener varios PDFs por día
-  // sin que se reemplacen entre sí. Solo se reemplaza el del mismo día + etiqueta.
-  var etiqueta = _txt(datos.etiqueta).replace(/[^A-Za-z0-9]+/g, '');
-  var bytes = Utilities.base64Decode(b64);
-  var nombre = 'conteo-' + fecha + (etiqueta ? '-' + etiqueta : '') + '.pdf';
-  var blob = Utilities.newBlob(bytes, 'application/pdf', nombre);
+    // La etiqueta (ej. "Eurolub", "Proveedor") permite tener varios PDFs por día
+    // sin que se reemplacen entre sí. Solo se reemplaza el del mismo día + etiqueta.
+    var etiqueta = _txt(datos.etiqueta).replace(/[^A-Za-z0-9]+/g, '');
+    var bytes = Utilities.base64Decode(b64);
+    var nombre = 'conteo-' + fecha + (etiqueta ? '-' + etiqueta : '') + '.pdf';
+    var blob = Utilities.newBlob(bytes, 'application/pdf', nombre);
 
-  var folder = _carpetaPDF();
-  // Reemplazar el PDF de esa fecha si ya existía.
-  var existentes = folder.getFilesByName(nombre);
-  while (existentes.hasNext()) existentes.next().setTrashed(true);
+    var folder = _carpetaPDF();
+    // Reemplazar el PDF de esa fecha si ya existía.
+    var existentes = folder.getFilesByName(nombre);
+    while (existentes.hasNext()) existentes.next().setTrashed(true);
 
-  var file = folder.createFile(blob);
-  // Cualquiera con el enlace puede verlo (para poder abrirlo desde la app).
-  try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) {}
+    var file = folder.createFile(blob);
+    // Cualquiera con el enlace puede verlo (para poder abrirlo desde la app).
+    try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) {}
 
-  return _json({ ok: true, url: file.getUrl(), id: file.getId(), nombre: nombre });
+    _guardarDebug({ paso: 'pdf_ok', nombre: nombre, url: file.getUrl() });
+    return _json({ ok: true, url: file.getUrl(), id: file.getId(), nombre: nombre });
+  } catch (err) {
+    _guardarDebug({ paso: 'pdf_ERROR', error: String(err) });
+    return _json({ ok: false, error: String(err) });
+  }
 }
 
 /**
