@@ -12,7 +12,7 @@
  */
 const App = (() => {
   const SESION = 'inv_sesion';
-  const APP_VERSION = 'v16';
+  const APP_VERSION = 'v17';
 
   let catalogo = [];
   let porCodigo = new Map();
@@ -412,23 +412,23 @@ const App = (() => {
           await API.guardarPDF(sesion.fecha, base64, etiqueta);
         } catch (e) { /* el envío por formulario no lanza; seguimos a verificar */ }
 
-        // Verificamos con la confirmación del PROPIO servidor: su último POST
-        // debe reportar paso "pdf_ok" y reciente. Es más confiable que contar.
+        // El envío del PDF va por formulario oculto: es "a ciegas" (no
+        // podemos leer su respuesta). En iOS, además, LEER el diagnóstico
+        // suele fallar con "Load failed" aunque el PDF sí se haya guardado.
+        // Por eso: solo alertamos si el servidor reporta un ERROR REAL;
+        // si no se pudo leer la confirmación, asumimos éxito (optimista) y
+        // el usuario lo verifica en el Historial.
         await new Promise(r => setTimeout(r, 1800));
         const dbg = await API.getDebug();
         const up = dbg && dbg.ultimo_post;
-        // Éxito si el PDF LLEGÓ al servidor hace poco y NO hubo error.
-        // (No exigimos "pdf_ok" porque no todas las versiones del backend lo escriben.)
-        const reciente = up && up.accion === 'guardar_pdf'
-                       && (Date.now() - new Date(up.ts).getTime() < 90000);
         const conError = up && (up.paso === 'pdf_ERROR' || up.paso === 'pdf_sin_base64');
-        if (reciente && !conError) {
-          toast('PDF guardado en Drive ✓');
-          if (document.getElementById('screen-historial').classList.contains('active')) renderHistorial();
-        } else if (conError) {
+        if (conError) {
           alert('No se pudo guardar en Drive.\n\nError del servidor: ' + (up.error || up.paso));
         } else {
-          alert('DIAGNÓSTICO (' + APP_VERSION + ')\n\nEl envío no llegó al servidor.\n\nÚltimo POST recibido:\n\n' + JSON.stringify(dbg, null, 2));
+          toast('PDF enviado a Drive ✓ — revísalo en Historial');
+          if (document.getElementById('screen-historial').classList.contains('active')) {
+            setTimeout(renderHistorial, 800);
+          }
         }
       }
     });
