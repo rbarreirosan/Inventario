@@ -159,6 +159,19 @@ const API = (() => {
     return { ok: true };
   }
 
+  // Lee el diagnóstico del servidor (qué recibió en el último POST).
+  // Usa SIEMPRE la URL configurada (la correcta), sin depender de teclear nada.
+  async function getDebug() {
+    if (modoDemo()) return { modo: 'demo' };
+    try {
+      const resp = await fetch(apiUrl() + '?accion=debug');
+      const data = await resp.json();
+      return data;
+    } catch (e) {
+      return { error_lectura: String(e && e.message ? e.message : e) };
+    }
+  }
+
   // Lista los PDFs guardados. Devuelve un array, [] si no hay,
   // o null si el Apps Script todavía no tiene esta función (versión vieja).
   async function getHistorial() {
@@ -220,5 +233,5 @@ const API = (() => {
     ];
   }
 
-  return { getCatalogo, guardarConteo, agregarProducto, guardarPDF, getHistorial, sincronizarPendientes, pendientes, modoDemo };
+  return { getCatalogo, guardarConteo, agregarProducto, guardarPDF, getHistorial, getDebug, sincronizarPendientes, pendientes, modoDemo };
 })();

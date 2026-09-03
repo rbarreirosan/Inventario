@@ -12,7 +12,7 @@
  */
 const App = (() => {
   const SESION = 'inv_sesion';
-  const APP_VERSION = 'v11';
+  const APP_VERSION = 'v12';
 
   let catalogo = [];
   let porCodigo = new Map();
@@ -369,7 +369,10 @@ const App = (() => {
           toast('PDF guardado en Drive ✓');
           if (document.getElementById('screen-historial').classList.contains('active')) renderHistorial();
         } else {
-          alert('El PDF se generó, pero NO llegó a tu Drive.\n\nCausa casi segura: el Apps Script no está publicado con la versión nueva.\n\nCompruébalo abriendo en el navegador tu URL del Apps Script terminada en:\n   ?accion=version\nDebe decir  "acepta_formulario": true .\n\nSi no lo dice: Apps Script → Implementar → Administrar implementaciones → ✏️ → Versión: Nueva versión → Implementar.');
+          // Leemos el diagnóstico DEL SERVIDOR CORRECTO (la URL configurada)
+          // para ver exactamente qué recibió, sin teclear direcciones.
+          const dbg = await API.getDebug();
+          alert('DIAGNÓSTICO (' + APP_VERSION + ')\n\nEl PDF no aparece en Drive todavía.\n\nEsto es lo que reporta TU servidor (su último POST):\n\n' + JSON.stringify(dbg, null, 2));
         }
       }
     });
