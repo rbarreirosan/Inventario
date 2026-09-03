@@ -12,7 +12,7 @@
  */
 const App = (() => {
   const SESION = 'inv_sesion';
-  const APP_VERSION = 'v15';
+  const APP_VERSION = 'v16';
 
   let catalogo = [];
   let porCodigo = new Map();
@@ -120,12 +120,7 @@ const App = (() => {
       return;
     }
     lista.innerHTML = recientes.map(i => filaCapturado(i)).join('');
-    lista.querySelectorAll('[data-editar]').forEach(el => {
-      el.addEventListener('click', () => {
-        const item = sesion.items.find(x => x.id === el.dataset.editar);
-        if (item) abrirCaptura(item);
-      });
-    });
+    conectarFilasCapturadas(lista);
   }
 
   function filaCapturado(i) {
@@ -135,16 +130,68 @@ const App = (() => {
       ? `<span class="pill pill-rojo">${i.cajas_a_pedir ? i.cajas_a_pedir + ' cajas' : 'sin pedido'}</span>`
       : '';
     return `
-      <li class="cap" data-editar="${i.id}">
-        <div class="cap-main">
-          <div class="cap-marca">${esc(i.nombre || i.marca || '—')}</div>
-          <div class="cap-det">${esc(detalle)}</div>
-        </div>
-        <div class="cap-right">
-          <div class="cap-exist">${i.existencia ?? 0}<span>u</span></div>
-          ${extra}
+      <li class="cap-wrap" data-id="${i.id}">
+        <button class="cap-del" data-del="${i.id}"><span>🗑</span> Borrar</button>
+        <div class="cap">
+          <div class="cap-main">
+            <div class="cap-marca">${esc(i.nombre || i.marca || '—')}</div>
+            <div class="cap-det">${esc(detalle)}</div>
+          </div>
+          <div class="cap-right">
+            <div class="cap-exist">${i.existencia ?? 0}<span>u</span></div>
+            ${extra}
+          </div>
         </div>
       </li>`;
+  }
+
+  // Deslizar a la izquierda revela "Borrar"; tocar abre para editar.
+  function conectarFilasCapturadas(lista) {
+    lista.querySelectorAll('.cap-wrap').forEach(wrap => {
+      const cap = wrap.querySelector('.cap');
+      const id = wrap.dataset.id;
+      let startX = 0, dx = 0, dragging = false, moved = false;
+
+      cap.addEventListener('touchstart', e => {
+        startX = e.touches[0].clientX; dragging = true; moved = false;
+        cap.style.transition = 'none';
+      }, { passive: true });
+
+      cap.addEventListener('touchmove', e => {
+        if (!dragging) return;
+        dx = e.touches[0].clientX - startX;
+        if (dx < 0) { if (Math.abs(dx) > 6) moved = true; cap.style.transform = 'translateX(' + Math.max(dx, -104) + 'px)'; }
+      }, { passive: true });
+
+      cap.addEventListener('touchend', () => {
+        dragging = false; cap.style.transition = '';
+        if (dx < -52) { cap.style.transform = 'translateX(-104px)'; wrap.classList.add('abierto'); }
+        else { cap.style.transform = ''; wrap.classList.remove('abierto'); }
+        dx = 0;
+      });
+
+      cap.addEventListener('click', () => {
+        if (wrap.classList.contains('abierto')) { cap.style.transform = ''; wrap.classList.remove('abierto'); return; }
+        if (moved) { moved = false; return; }
+        const item = sesion.items.find(x => x.id === id);
+        if (item) abrirCaptura(item);
+      });
+
+      wrap.querySelector('.cap-del').addEventListener('click', () => borrarItem(id));
+    });
+  }
+
+  // Borra un conteo (del teléfono y del Google Sheet). Devuelve a la lista.
+  function borrarItem(id, { desdeCaptura = false } = {}) {
+    const item = sesion.items.find(x => x.id === id);
+    if (!item) return;
+    const nombre = item.nombre || item.marca || 'este producto';
+    if (!confirm('¿Borrar el conteo de "' + nombre + '"?')) return;
+    sesion.items = sesion.items.filter(x => x.id !== id);
+    guardarSesion();
+    API.borrarConteo(sesion.fecha, item.codigo_barras).catch(() => {});
+    toast('Conteo borrado');
+    if (desdeCaptura) mostrar('conteo'); else renderConteo();
   }
 
   // ---------------------------------------------------------------
@@ -210,6 +257,9 @@ const App = (() => {
       guardarCaptura();
       mostrar('conteo');
     });
+    document.getElementById('btn-borrar-captura').addEventListener('click', () => {
+      if (capturaActual) borrarItem(capturaActual.id, { desdeCaptura: true });
+    });
   }
 
   function abrirCaptura(prod, esNuevo = false) {
@@ -239,6 +289,10 @@ const App = (() => {
   function renderCaptura() {
     const i = capturaActual;
     const alm = esAlmacen(i);
+
+    // El botón "Borrar" solo aparece si el producto ya está en la lista.
+    const yaEnLista = sesion.items.some(x => x.id === i.id);
+    document.getElementById('btn-borrar-captura').hidden = !yaEnLista;
 
     document.getElementById('captura-marca').textContent = i.nombre || i.marca || 'Producto nuevo';
     document.getElementById('captura-marca-pill').textContent = i.marca || '—';

@@ -110,6 +110,11 @@ function doPost(e) {
     // Reinicio del registro de diagnóstico para ESTE POST.
     PropertiesService.getScriptProperties().setProperty('DEBUG', JSON.stringify(dbg));
 
+    // Si la app pide BORRAR un conteo de la pestaña "Conteos":
+    if (cuerpo.accion === 'borrar_conteo') {
+      return borrarConteo(cuerpo.fecha, cuerpo.codigo_barras);
+    }
+
     // Si la app pide agregar/actualizar un producto del CATÁLOGO:
     if (cuerpo.accion === 'agregar_catalogo') {
       return agregarACatalogo(cuerpo.producto || {});
@@ -200,6 +205,43 @@ function doPost(e) {
     dbg.error = String(err);
     _guardarDebug(dbg);
     return _json({ ok: false, error: String(err) });
+  }
+}
+
+/**
+ * Borra de la pestaña "Conteos" el/los renglón(es) de un producto en una
+ * fecha dada (por fecha + código de barras). Si el código viene vacío, no
+ * borra nada (no se puede identificar de forma segura).
+ * Devuelve: { ok:true, borrados: N }
+ */
+function borrarConteo(fecha, codigo) {
+  var f = _txt(fecha);
+  var c = _txt(codigo);
+  if (!c) return _json({ ok: true, borrados: 0, nota: 'sin código' });
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName(HOJA_CONTEOS);
+  if (!hoja) return _json({ ok: false, error: 'No existe la pestaña "' + HOJA_CONTEOS + '"' });
+
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var datos = hoja.getDataRange().getValues();
+    var borrados = 0;
+    // Recorremos de abajo hacia arriba para poder borrar filas sin desajustar.
+    for (var i = datos.length - 1; i >= 1; i--) {
+      var ff = _txt(datos[i][0]);
+      var cc = _txt(datos[i][1]);
+      if (cc === c && (!f || ff === f)) {
+        hoja.deleteRow(i + 1);
+        borrados++;
+      }
+    }
+    return _json({ ok: true, borrados: borrados });
+  } catch (err) {
+    return _json({ ok: false, error: String(err) });
+  } finally {
+    lock.releaseLock();
   }
 }
 

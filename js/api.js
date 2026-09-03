@@ -88,7 +88,7 @@ const API = (() => {
     try {
       const resp = await fetch(apiUrl() + '?_=' + Date.now(), { method: 'GET', cache: 'no-store' });
       const data = await resp.json();
-      if (!data.ok) throw new Error(data.error || 'Respuesta inválida');
+      if (!data.ok || !Array.isArray(data.catalogo)) throw new Error(data.error || 'Respuesta inválida');
       guardarCache(data.catalogo);
       return data.catalogo;
     } catch (err) {
@@ -146,6 +146,14 @@ const API = (() => {
     }
 
     await postText({ accion: 'agregar_catalogo', producto });
+    return { ok: true };
+  }
+
+  // Borra un conteo del Google Sheet (por fecha + código de barras).
+  async function borrarConteo(fecha, codigo_barras) {
+    if (modoDemo()) return { ok: true, demo: true };
+    if (!codigo_barras) return { ok: true, sinCodigo: true };
+    await postText({ accion: 'borrar_conteo', fecha, codigo_barras });
     return { ok: true };
   }
 
@@ -233,5 +241,5 @@ const API = (() => {
     ];
   }
 
-  return { getCatalogo, guardarConteo, agregarProducto, guardarPDF, getHistorial, getDebug, sincronizarPendientes, pendientes, modoDemo };
+  return { getCatalogo, guardarConteo, agregarProducto, borrarConteo, guardarPDF, getHistorial, getDebug, sincronizarPendientes, pendientes, modoDemo };
 })();
