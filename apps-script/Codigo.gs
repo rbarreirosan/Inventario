@@ -25,6 +25,11 @@ var CARPETA_PDF = 'Inventario — Conteos (PDF)';
  */
 function doGet(e) {
   try {
+    // Comprobación de versión del backend (para verificar la publicación).
+    if (e && e.parameter && e.parameter.accion === 'version') {
+      return _json({ ok: true, backend: 'formulario-2026-09', acepta_formulario: true });
+    }
+
     // Historial de PDFs guardados en Drive.
     if (e && e.parameter && e.parameter.accion === 'historial') {
       return historial();

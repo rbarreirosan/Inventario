@@ -12,7 +12,7 @@
  */
 const App = (() => {
   const SESION = 'inv_sesion';
-  const APP_VERSION = 'v10';
+  const APP_VERSION = 'v11';
 
   let catalogo = [];
   let porCodigo = new Map();
@@ -363,13 +363,13 @@ const App = (() => {
         await new Promise(r => setTimeout(r, 2500));
         const despues = await contarHistorial();
 
-        if (despues === null) {
-          alert('El historial no está disponible.\n\nFalta actualizar el Apps Script (publicar la Nueva versión).');
-        } else if (antes === null || despues > antes || despues > 0) {
+        const subio = (typeof antes === 'number' && typeof despues === 'number' && despues > antes)
+                    || (antes === null && typeof despues === 'number' && despues > 0);
+        if (subio) {
           toast('PDF guardado en Drive ✓');
           if (document.getElementById('screen-historial').classList.contains('active')) renderHistorial();
         } else {
-          alert('El PDF se generó, pero NO llegó a tu Drive.\n\nCausa casi segura: falta publicar la NUEVA VERSIÓN del Apps Script.\n\nApps Script → Implementar → Administrar implementaciones → ✏️ (editar) → Versión: Nueva versión → Implementar.\n\n(Guardar el código NO es suficiente; hay que publicar la nueva versión.)');
+          alert('El PDF se generó, pero NO llegó a tu Drive.\n\nCausa casi segura: el Apps Script no está publicado con la versión nueva.\n\nCompruébalo abriendo en el navegador tu URL del Apps Script terminada en:\n   ?accion=version\nDebe decir  "acepta_formulario": true .\n\nSi no lo dice: Apps Script → Implementar → Administrar implementaciones → ✏️ → Versión: Nueva versión → Implementar.');
         }
       }
     });
