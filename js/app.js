@@ -12,7 +12,7 @@
  */
 const App = (() => {
   const SESION = 'inv_sesion';
-  const APP_VERSION = 'v9';
+  const APP_VERSION = 'v10';
 
   let catalogo = [];
   let porCodigo = new Map();
@@ -354,11 +354,22 @@ const App = (() => {
       // Guardar una copia en Google Drive (si hay Sheet conectado).
       if (!API.modoDemo() && base64) {
         toast('Guardando copia en Drive…');
+        const antes = await contarHistorial(); // cuántos PDFs había antes
         try {
           await API.guardarPDF(sesion.fecha, base64, etiqueta);
-          toast('PDF enviado a Drive ✓ — revísalo en Historial (' + APP_VERSION + ')');
-        } catch (e) {
-          alert('El PDF se generó, pero falló la conexión al guardar en Drive.\n\nDetalle del error:\n' + (e && e.message ? e.message : String(e)));
+        } catch (e) { /* el envío por formulario no lanza; seguimos a verificar */ }
+
+        // Verificamos leyendo el Historial: ¿aumentó el número de PDFs?
+        await new Promise(r => setTimeout(r, 2500));
+        const despues = await contarHistorial();
+
+        if (despues === null) {
+          alert('El historial no está disponible.\n\nFalta actualizar el Apps Script (publicar la Nueva versión).');
+        } else if (antes === null || despues > antes || despues > 0) {
+          toast('PDF guardado en Drive ✓');
+          if (document.getElementById('screen-historial').classList.contains('active')) renderHistorial();
+        } else {
+          alert('El PDF se generó, pero NO llegó a tu Drive.\n\nCausa casi segura: falta publicar la NUEVA VERSIÓN del Apps Script.\n\nApps Script → Implementar → Administrar implementaciones → ✏️ (editar) → Versión: Nueva versión → Implementar.\n\n(Guardar el código NO es suficiente; hay que publicar la nueva versión.)');
         }
       }
     });
@@ -619,6 +630,12 @@ const App = (() => {
         <div class="hist-etiqueta">${esc(a.etiqueta ? a.etiqueta : 'Todo el conteo')}</div>
         <div class="hist-abrir">Abrir PDF</div>
       </a>`).join('');
+  }
+
+  // Cuenta cuántos PDFs hay en el historial (null si no está disponible).
+  async function contarHistorial() {
+    const arch = await API.getHistorial();
+    return arch === null ? null : arch.length;
   }
 
   // "2026-09-02" -> "2 sep 2026"; si no hay fecha, usa el nombre.
