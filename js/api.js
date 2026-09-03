@@ -86,7 +86,7 @@ const API = (() => {
     }
 
     try {
-      const resp = await fetch(apiUrl(), { method: 'GET' });
+      const resp = await fetch(apiUrl() + '?_=' + Date.now(), { method: 'GET', cache: 'no-store' });
       const data = await resp.json();
       if (!data.ok) throw new Error(data.error || 'Respuesta inválida');
       guardarCache(data.catalogo);
@@ -164,7 +164,7 @@ const API = (() => {
   async function getDebug() {
     if (modoDemo()) return { modo: 'demo' };
     try {
-      const resp = await fetch(apiUrl() + '?accion=debug');
+      const resp = await fetch(apiUrl() + '?accion=debug&_=' + Date.now(), { cache: 'no-store' });
       const data = await resp.json();
       return data;
     } catch (e) {
@@ -177,7 +177,7 @@ const API = (() => {
   async function getHistorial() {
     if (modoDemo()) return null;
     try {
-      const resp = await fetch(apiUrl() + '?accion=historial');
+      const resp = await fetch(apiUrl() + '?accion=historial&_=' + Date.now(), { cache: 'no-store' });
       const data = await resp.json();
       if (!data.ok || !Array.isArray(data.archivos)) return null;
       return data.archivos;
