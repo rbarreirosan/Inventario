@@ -27,7 +27,7 @@ function doGet(e) {
   try {
     // Comprobación de versión del backend (para verificar la publicación).
     if (e && e.parameter && e.parameter.accion === 'version') {
-      return _json({ ok: true, backend: 'formulario-2026-09', acepta_formulario: true });
+      return _json({ ok: true, backend: 'clave-2026-09', acepta_formulario: true, soporta_clave: true });
     }
 
     // Diagnóstico: muestra lo último que recibió el servidor en un POST.
