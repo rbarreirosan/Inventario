@@ -1,15 +1,18 @@
 /**
- * sw.js — Service Worker (hace la app instalable y usable sin conexión).
+ * sw.js — Service Worker (hace la app instalable, rápida y usable sin conexión).
  *
- * Cachea el "esqueleto" de la app (HTML/CSS/JS e íconos) para que abra
- * rápido y funcione aunque el wifi del taller falle. Los datos (catálogo
- * y conteos) se manejan aparte en localStorage desde api.js.
+ * Estrategia: "stale-while-revalidate" para los archivos de la app.
+ *   - Abre AL INSTANTE desde lo guardado en el teléfono (rápido, incluso con
+ *     datos móviles o sin señal).
+ *   - Por detrás busca la versión nueva y actualiza la caché para la próxima
+ *     vez. Así se actualiza sola: basta cerrar y reabrir la app.
+ * Las llamadas al Apps Script (datos) NUNCA se cachean: siempre van a la red.
  *
- * IMPORTANTE: sube el número de versión (CACHE) cada vez que cambies
- * archivos, para que los teléfonos descarguen la versión nueva.
+ * IMPORTANTE: sube el número de versión (CACHE) cada vez que cambies archivos.
  */
-const CACHE = 'inventario-v18';
+const CACHE = 'inventario-v19';
 
+// Archivos propios de la app (mismo origen).
 const ARCHIVOS = [
   './',
   './index.html',
@@ -24,9 +27,20 @@ const ARCHIVOS = [
   './icons/icon-512.png'
 ];
 
+// Librerías externas (CDN) que la app usa. Cachearlas evita re-descargarlas
+// en cada apertura (arranque mucho más rápido en el celular).
+const LIBS = [
+  'https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+];
+
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ARCHIVOS)).then(() => self.skipWaiting())
+    caches.open(CACHE).then(async c => {
+      await c.addAll(ARCHIVOS);
+      // Las libs de CDN se cachean "best-effort" (si alguna falla, no importa).
+      await Promise.all(LIBS.map(u => c.add(u).catch(() => {})));
+    }).then(() => self.skipWaiting())
   );
 });
 
@@ -39,23 +53,36 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
 
-  // Nunca cachear llamadas al Apps Script ni a librerías externas: siempre a la red.
-  if (url.hostname.includes('script.google.com') || url.origin !== self.location.origin) {
-    return; // deja pasar la petición normal a la red
+  // Apps Script (datos): SIEMPRE a la red, nunca caché.
+  if (url.hostname.includes('script.google.com') || url.hostname.includes('googleusercontent.com')) {
+    return;
   }
 
-  // Estrategia "network-first" para TODO lo de la app: siempre intentamos
-  // traer la versión más nueva de la red y actualizamos la caché. Si no hay
-  // conexión, usamos lo último guardado (así sigue funcionando sin internet).
+  // Librerías de CDN: cache-first (ya están precargadas; si no, red y cachea).
+  if (url.origin !== self.location.origin) {
+    event.respondWith(
+      caches.match(event.request).then(cached => cached || fetch(event.request).then(r => {
+        const copia = r.clone();
+        caches.open(CACHE).then(c => c.put(event.request, copia)).catch(() => {});
+        return r;
+      }).catch(() => cached))
+    );
+    return;
+  }
+
+  // Archivos de la app: "stale-while-revalidate".
+  // Devuelve lo guardado al instante y actualiza la caché por detrás.
   event.respondWith(
-    fetch(event.request).then(r => {
-      const copia = r.clone();
-      caches.open(CACHE).then(c => c.put(event.request, copia)).catch(() => {});
-      return r;
-    }).catch(() =>
-      caches.match(event.request).then(resp => resp || caches.match('./index.html'))
-    )
+    caches.match(event.request).then(cached => {
+      const red = fetch(event.request).then(r => {
+        const copia = r.clone();
+        caches.open(CACHE).then(c => c.put(event.request, copia)).catch(() => {});
+        return r;
+      }).catch(() => cached || caches.match('./index.html'));
+      return cached || red;
+    })
   );
 });
