@@ -12,7 +12,7 @@
  */
 const App = (() => {
   const SESION = 'inv_sesion';
-  const APP_VERSION = 'v20';
+  const APP_VERSION = 'v21';
 
   let catalogo = [];
   let porCodigo = new Map();
@@ -271,6 +271,7 @@ const App = (() => {
       capturaActual = {
         id: prod.id || uid(),
         codigo_barras: prod.codigo_barras || '',
+        clave: prod.clave || '',
         nombre: prod.nombre || '',
         marca: prod.marca || '',
         origen: prod.origen || (esAlmacen(prod) ? 'Almacén' : 'Proveedor'),
@@ -563,6 +564,7 @@ const App = (() => {
 
     // Rellenar campos
     document.getElementById('cat-codigo').value = codigoInicial;
+    document.getElementById('cat-clave').value = p.clave || '';
     document.getElementById('cat-nombre').value = p.nombre || '';
     document.getElementById('cat-categoria').value = p.categoria || '';
     document.getElementById('cat-presentacion').value = p.presentacion || '';
@@ -606,6 +608,7 @@ const App = (() => {
     const esAlm = (window.CONFIG.MARCAS_ALMACEN || []).includes(marca);
     const producto = {
       codigo_barras: codigo,
+      clave: document.getElementById('cat-clave').value.trim(),
       nombre,
       marca,
       origen: esAlm ? 'Almacén' : 'Proveedor',
@@ -650,6 +653,9 @@ const App = (() => {
     }
     cont.innerHTML = filas.map(p => {
       const meta = [p.categoria, p.presentacion, fmtPrecio(p.precio)].filter(Boolean).join(' · ');
+      const clave = p.clave
+        ? `<span class="cat-clave">Clave SAE: ${esc(p.clave)}</span>`
+        : `<span class="cat-clave cat-clave-vacia">Sin clave SAE</span>`;
       return `
       <div class="cat-wrap" data-cod="${esc(p.codigo_barras)}">
         <button class="cat-edit"><span>✏️</span> Editar</button>
@@ -659,6 +665,7 @@ const App = (() => {
             <span class="pill ${esAlmacen(p) ? 'pill-rojo' : 'pill-gris'}">${esc(p.marca)}</span>
             <span class="cat-meta">${esc(meta)}</span>
           </div>
+          ${clave}
           <div class="cat-cod">${p.codigo_barras ? '#' + esc(p.codigo_barras) : 'sin código'}</div>
         </div>
       </div>`;

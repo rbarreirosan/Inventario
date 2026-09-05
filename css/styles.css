@@ -266,6 +266,12 @@ td.cod { color: var(--suave); font-variant-numeric: tabular-nums; }
 .cat-sub { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
 .cat-meta { font-size: 13px; color: var(--suave); }
 .cat-cod { font-size: 12px; color: var(--suave); margin-top: 4px; font-variant-numeric: tabular-nums; }
+.cat-clave {
+  display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 6px;
+  font-size: 12px; font-weight: 700; color: var(--rojo);
+  background: rgba(201, 42, 42, .08); font-variant-numeric: tabular-nums;
+}
+.cat-clave-vacia { color: var(--suave); background: var(--gris-suave); font-weight: 500; }
 
 /* ---------- Bottom nav ---------- */
 .bottom-nav {

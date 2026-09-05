@@ -254,8 +254,8 @@ const API = (() => {
 
   function catalogoDemo() {
     return [
-      { codigo_barras: '7501234500011', nombre: '0W-20 Super Eco',        marca: 'Eurolub',   origen: 'Almacén',   categoria: 'Aceite',       presentacion: '1 L',    precio: '189.00' },
-      { codigo_barras: '7501234500028', nombre: '15W-40 Turbo Diesel',    marca: 'Eurolub',   origen: 'Almacén',   categoria: 'Aceite',       presentacion: '4 L',    precio: '620.00' },
+      { codigo_barras: '7501234500011', nombre: '0W-20 Super Eco',        marca: 'Eurolub',   origen: 'Almacén',   categoria: 'Aceite',       presentacion: '1 L',    precio: '189.00', clave: '337001' },
+      { codigo_barras: '7501234500028', nombre: '15W-40 Turbo Diesel',    marca: 'Eurolub',   origen: 'Almacén',   categoria: 'Aceite',       presentacion: '4 L',    precio: '620.00', clave: '337004' },
       { codigo_barras: '7501234500035', nombre: 'Limpia Inyectores',      marca: 'Gamez',     origen: 'Almacén',   categoria: 'Aditivo',      presentacion: '250 ml', precio: '95.00' },
       { codigo_barras: '7501234500042', nombre: 'Anticongelante Verde',   marca: 'Gamez',     origen: 'Almacén',   categoria: 'Refrigerante', presentacion: '1 L',    precio: '145.00' },
       { codigo_barras: '7501234500059', nombre: 'Supreme 20W-50',         marca: 'Chevron',   origen: 'Proveedor', categoria: 'Aceite',       presentacion: '1 L',    precio: '165.00' },

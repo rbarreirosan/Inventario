@@ -63,6 +63,7 @@ function doGet(e) {
 
       catalogo.push({
         codigo_barras: codigo,
+        clave:         _txt(fila[idx.clave]),
         nombre:        _txt(fila[idx.nombre]),
         marca:         _txt(fila[idx.marca]),
         origen:        _txt(fila[idx.origen]),
@@ -250,7 +251,7 @@ function borrarConteo(fecha, codigo) {
  * Si el código de barras ya existe, actualiza esa fila; si no, agrega una nueva.
  * Escribe cada dato en su columna correcta según los encabezados.
  *
- * producto = { codigo_barras, nombre, marca, origen, categoria, presentacion, precio }
+ * producto = { codigo_barras, clave, nombre, marca, origen, categoria, presentacion, precio }
  * Devuelve: { ok:true, actualizado:true|false }
  */
 function agregarACatalogo(producto) {
@@ -274,6 +275,7 @@ function agregarACatalogo(producto) {
     function nuevaFila(base) {
       var fila = base ? base.slice() : new Array(numCols).fill('');
       ponerEn(fila, idx.codigo_barras, codigo);
+      ponerEn(fila, idx.clave,         _txt(producto.clave));
       ponerEn(fila, idx.nombre,        _txt(producto.nombre));
       ponerEn(fila, idx.marca,         _txt(producto.marca));
       ponerEn(fila, idx.origen,        _txt(producto.origen));
@@ -424,6 +426,7 @@ function _indiceColumnas(encabezados) {
   }
   return {
     codigo_barras: buscar(['codigo_barras', 'codigo', 'codigobarras', 'barcode']),
+    clave:         buscar(['clave', 'claveinterna', 'clavesae', 'sae', 'codigointerno', 'claveinter']),
     nombre:        buscar(['nombre', 'producto', 'descripcion']),
     marca:         buscar(['marca']),
     origen:        buscar(['origen']),

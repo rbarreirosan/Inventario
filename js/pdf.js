@@ -152,6 +152,15 @@ const PDFReporte = (() => {
           doc.setTextColor(...COLORES.tinta);
         }
 
+        // Clave interna (SAE): renglón propio, en negrita, para copiar/pegar.
+        if (i.clave) {
+          y += 12;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9.5);
+          doc.setTextColor(...COLORES.rojo);
+          doc.text('Clave SAE: ' + String(i.clave), x0, y);
+        }
+
         // Subtítulo (presentación · categoría) si hay nombre
         if (i.nombre) {
           const sub = [i.presentacion, i.categoria].filter(Boolean).join(' · ');

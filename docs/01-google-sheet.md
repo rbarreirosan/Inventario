@@ -29,19 +29,25 @@ Abajo del todo verás una pestaña que dice **"Hoja 1"**.
 
    ⚠️ Respeta el acento en la **á**. Debe decir `Catálogo`, no `Catalogo`.
 
-2. En la **fila 1** (la primera), escribe estos 7 títulos, uno en cada columna
-   (columnas A, B, C, D, E, F, G):
+2. En la **fila 1** (la primera), escribe estos 8 títulos, uno en cada columna
+   (columnas A a H):
 
-   | A | B | C | D | E | F | G |
-   |---|---|---|---|---|---|---|
-   | codigo_barras | nombre | marca | origen | categoria | presentacion | precio |
+   | A | B | C | D | E | F | G | H |
+   |---|---|---|---|---|---|---|---|
+   | codigo_barras | clave | nombre | marca | origen | categoria | presentacion | precio |
 
    👉 Escríbelos **sin acentos ni espacios** tal como están arriba
-   (`codigo_barras`, `categoria`, `presentacion`). Así la app los entiende bien.
+   (`codigo_barras`, `clave`, `categoria`, `presentacion`). Así la app los entiende bien.
 
    > 💡 El orden de las columnas **no importa**: la app las reconoce por su
    > nombre de título. Si ya tenías columnas creadas, solo agrega las de
-   > **`nombre`** y **`precio`** donde quieras.
+   > **`clave`**, **`nombre`** y **`precio`** donde quieras.
+
+   > 🔑 La columna **`clave`** es la **clave interna (SAE)** del producto
+   > (por ejemplo `337005` para el 10W-40 GT de 5 L, `337001` para el de 1 L).
+   > **Sí aparece en el PDF**, para que quien reciba el reporte solo copie la
+   > clave y la pegue en su sistema. Puedes llenarla aquí en la hoja o desde la
+   > app (Catálogo → agregar/editar producto).
 
    > 💵 La columna **`precio`** es **opcional**. Se ve dentro de la app (en el
    > Catálogo y al capturar), pero **NUNCA aparece en el PDF**: el PDF solo
@@ -50,16 +56,18 @@ Abajo del todo verás una pestaña que dice **"Hoja 1"**.
 
 3. A partir de la **fila 2**, empieza a capturar tus productos. Ejemplo:
 
-   | codigo_barras | nombre | marca | origen | categoria | presentacion | precio |
-   |---------------|--------|----------|-----------|-------------|-------|-------|
-   | 4025377226057 | 0W-20 Super Eco | Eurolub | Almacén | Aceite | 5 L | 189.00 |
-   | 7501234500059 | Supreme 20W-50 | Chevron | Proveedor | Aceite | 1 L | 165.00 |
-   | 7501234500097 | Anticongelante 50/50 | Prestone | Proveedor | Refrigerante | 1 L | 210.00 |
+   | codigo_barras | clave | nombre | marca | origen | categoria | presentacion | precio |
+   |---------------|-------|--------|----------|-----------|-------------|-------|-------|
+   | 4025377226057 | 337005 | 10W-40 GT | Eurolub | Almacén | Aceite | 5 L | 189.00 |
+   | 7501234500059 | | Supreme 20W-50 | Chevron | Proveedor | Aceite | 1 L | 165.00 |
+   | 7501234500097 | | Anticongelante 50/50 | Prestone | Proveedor | Refrigerante | 1 L | 210.00 |
 
 ### Qué poner en cada columna
 
 - **codigo_barras**: el número que aparece bajo el código de barras del producto.
   (Puedes escanearlo con la app más adelante para verlo, o teclearlo a mano.)
+- **clave**: la **clave interna (SAE)** que usas en tu sistema, por ejemplo
+  `337005`. Es opcional, pero si la pones **sale en el PDF** para copiar y pegar.
 - **nombre**: el nombre del producto para identificarlo de un vistazo, por
   ejemplo `0W-20 Super Eco`. Es lo que verás grande en la app al capturar.
 - **marca**: la marca del producto.
