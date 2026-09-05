@@ -21,17 +21,46 @@ const API = (() => {
     return apiUrl() === '';
   }
 
-  // Envía datos al Apps Script con un FORMULARIO OCULTO hacia un iframe.
-  // En iOS/Safari, fetch (incluso no-cors) a veces lanza "Load failed" al
-  // hablar con Apps Script por su redirección interna. El envío por
-  // formulario NO está sujeto a CORS (es una "navegación"), así que siempre
-  // entrega el dato. No podemos leer la respuesta (iframe de otro dominio),
-  // pero no la necesitamos: el backend es idempotente y confirmamos por el
-  // Historial / Google Sheet.
-  function postText(payload) {
+  // Envía datos al Apps Script. Probamos varios métodos porque cada
+  // navegador (sobre todo iOS) bloquea unos u otros:
+  //   1) navigator.sendBeacon  -> el más confiable en iPhone (POST simple,
+  //      no sujeto a CORS). Límite ~64 KB.
+  //   2) fetch no-cors (keepalive) -> para payloads grandes o si no hay beacon.
+  //   3) formulario oculto -> iframe -> último recurso (funciona en escritorio).
+  // El backend lee el JSON desde el cuerpo (postData.contents) o del campo
+  // "data" (formulario), así que cualquiera de los tres entrega el dato.
+  async function postText(payload) {
+    const json = JSON.stringify(payload);
+
+    // 1) sendBeacon (ideal para iOS).
+    try {
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        const blob = new Blob([json], { type: 'text/plain;charset=utf-8' });
+        if (blob.size < 60000 && navigator.sendBeacon(apiUrl(), blob)) {
+          return { ok: true, via: 'beacon' };
+        }
+      }
+    } catch (e) { /* seguimos con el siguiente método */ }
+
+    // 2) fetch no-cors (no podemos leer la respuesta, pero entrega el dato).
+    try {
+      await fetch(apiUrl(), {
+        method: 'POST', mode: 'no-cors', keepalive: true,
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: json
+      });
+      return { ok: true, via: 'fetch' };
+    } catch (e) { /* seguimos con el formulario */ }
+
+    // 3) Formulario oculto hacia un iframe (último recurso).
+    return await postForm(json);
+  }
+
+  // Envío por formulario oculto (campo "data") apuntado a un iframe.
+  function postForm(json) {
     return new Promise(resolve => {
       let listo = false;
-      const terminar = () => { if (!listo) { listo = true; resolve({ ok: true }); } };
+      const terminar = () => { if (!listo) { listo = true; resolve({ ok: true, via: 'form' }); } };
       try {
         const nombre = 'inv_sink_' + Math.random().toString(36).slice(2);
         const iframe = document.createElement('iframe');
@@ -48,20 +77,18 @@ const API = (() => {
         const campo = document.createElement('input');
         campo.type = 'hidden';
         campo.name = 'data';
-        campo.value = JSON.stringify(payload);
+        campo.value = json;
         form.appendChild(campo);
         document.body.appendChild(form);
         form.submit();
 
-        // Limpieza y respaldo por tiempo (por si el iframe cross-origin
-        // no dispara "load" de forma legible).
         setTimeout(() => {
           terminar();
           try { form.remove(); } catch {}
           try { iframe.remove(); } catch {}
         }, 3000);
       } catch (e) {
-        terminar(); // nunca bloqueamos la app
+        terminar();
       }
     });
   }
