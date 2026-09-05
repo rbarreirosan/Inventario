@@ -10,7 +10,7 @@
  *
  * IMPORTANTE: sube el número de versión (CACHE) cada vez que cambies archivos.
  */
-const CACHE = 'inventario-v19';
+const CACHE = 'inventario-v20';
 
 // Archivos propios de la app (mismo origen).
 const ARCHIVOS = [

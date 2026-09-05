@@ -12,7 +12,7 @@
  */
 const App = (() => {
   const SESION = 'inv_sesion';
-  const APP_VERSION = 'v19';
+  const APP_VERSION = 'v20';
 
   let catalogo = [];
   let porCodigo = new Map();
@@ -546,18 +546,37 @@ const App = (() => {
     document.getElementById('btn-guardar-catalogo').addEventListener('click', guardarEnCatalogo);
   }
 
-  function abrirCatalogoModal(codigoInicial = '') {
+  // Abre el modal. Si `prefill` es un producto (objeto), entra en modo EDITAR.
+  function abrirCatalogoModal(prefill = '') {
+    const editar = prefill && typeof prefill === 'object';
+    const p = editar ? prefill : {};
+    const codigoInicial = editar ? (p.codigo_barras || '') : (typeof prefill === 'string' ? prefill : '');
+
     // Poblar marca
     const marcas = [...(window.CONFIG.MARCAS_ALMACEN || []), ...(window.CONFIG.MARCAS_PROVEEDOR || [])];
     document.getElementById('cat-marca').innerHTML =
-      `<option value="">Elige marca…</option>` + marcas.map(m => `<option>${esc(m)}</option>`).join('');
+      `<option value="">Elige marca…</option>` +
+      marcas.map(m => `<option ${m === p.marca ? 'selected' : ''}>${esc(m)}</option>`).join('');
     // Sugerencias de categoría (las que ya existen)
-    const cats = [...new Set(catalogo.map(p => p.categoria).filter(Boolean))].sort();
+    const cats = [...new Set(catalogo.map(x => x.categoria).filter(Boolean))].sort();
     document.getElementById('cat-categorias-list').innerHTML = cats.map(c => `<option value="${esc(c)}">`).join('');
-    // Limpiar campos
-    ['cat-codigo', 'cat-nombre', 'cat-categoria', 'cat-presentacion', 'cat-precio'].forEach(id => document.getElementById(id).value = '');
+
+    // Rellenar campos
     document.getElementById('cat-codigo').value = codigoInicial;
+    document.getElementById('cat-nombre').value = p.nombre || '';
+    document.getElementById('cat-categoria').value = p.categoria || '';
+    document.getElementById('cat-presentacion').value = p.presentacion || '';
+    document.getElementById('cat-precio').value = p.precio || '';
+
+    // En modo EDITAR, el código de barras no se cambia (es la identidad).
+    const inputCod = document.getElementById('cat-codigo');
+    inputCod.readOnly = editar;
+    document.getElementById('cat-escanear').style.display = editar ? 'none' : '';
+    document.getElementById('cat-modal-title').textContent = editar ? 'Editar producto' : 'Agregar al catálogo';
+    document.getElementById('btn-guardar-catalogo').textContent = editar ? 'Guardar cambios' : 'Guardar en el catálogo';
+
     document.getElementById('cat-origen-hint').hidden = true;
+    if (editar) actualizarOrigenHint();
     document.getElementById('modal-catalogo').hidden = false;
   }
 
@@ -624,20 +643,64 @@ const App = (() => {
       (!fMarca || p.marca === fMarca) && (!fCat || p.categoria === fCat));
 
     document.getElementById('catalogo-total').textContent = filas.length + ' productos';
-    const tbody = document.getElementById('catalogo-body');
+    const cont = document.getElementById('catalogo-lista');
     if (!filas.length) {
-      tbody.innerHTML = `<tr><td colspan="6" class="vacio">Sin productos. Agrégalos en la pestaña "Catálogo" del Google Sheet.</td></tr>`;
+      cont.innerHTML = `<p class="vacio">Sin productos. Toca "Agregar producto al catálogo" o agrégalos en el Google Sheet.</p>`;
       return;
     }
-    tbody.innerHTML = filas.map(p => `
-      <tr>
-        <td><b>${esc(p.nombre || '—')}</b></td>
-        <td><span class="pill ${esAlmacen(p) ? 'pill-rojo' : 'pill-gris'}">${esc(p.marca)}</span></td>
-        <td>${esc(p.categoria)}</td>
-        <td>${esc(p.presentacion)}</td>
-        <td class="precio">${esc(fmtPrecio(p.precio))}</td>
-        <td class="cod">${esc(p.codigo_barras)}</td>
-      </tr>`).join('');
+    cont.innerHTML = filas.map(p => {
+      const meta = [p.categoria, p.presentacion, fmtPrecio(p.precio)].filter(Boolean).join(' · ');
+      return `
+      <div class="cat-wrap" data-cod="${esc(p.codigo_barras)}">
+        <button class="cat-edit"><span>✏️</span> Editar</button>
+        <div class="cat-card">
+          <div class="cat-nombre">${esc(p.nombre || '—')}</div>
+          <div class="cat-sub">
+            <span class="pill ${esAlmacen(p) ? 'pill-rojo' : 'pill-gris'}">${esc(p.marca)}</span>
+            <span class="cat-meta">${esc(meta)}</span>
+          </div>
+          <div class="cat-cod">${p.codigo_barras ? '#' + esc(p.codigo_barras) : 'sin código'}</div>
+        </div>
+      </div>`;
+    }).join('');
+    conectarFilasCatalogo(cont);
+  }
+
+  // Deslizar la tarjeta hacia la DERECHA revela el botón verde "Editar".
+  function conectarFilasCatalogo(cont) {
+    cont.querySelectorAll('.cat-wrap').forEach(wrap => {
+      const card = wrap.querySelector('.cat-card');
+      const cod = wrap.dataset.cod;
+      let startX = 0, dx = 0, dragging = false, moved = false;
+
+      card.addEventListener('touchstart', e => {
+        startX = e.touches[0].clientX; dragging = true; moved = false;
+        card.style.transition = 'none';
+      }, { passive: true });
+
+      card.addEventListener('touchmove', e => {
+        if (!dragging) return;
+        dx = e.touches[0].clientX - startX;
+        if (dx > 0) { if (dx > 6) moved = true; card.style.transform = 'translateX(' + Math.min(dx, 104) + 'px)'; }
+      }, { passive: true });
+
+      card.addEventListener('touchend', () => {
+        dragging = false; card.style.transition = '';
+        if (dx > 52) { card.style.transform = 'translateX(104px)'; wrap.classList.add('abierto'); }
+        else { card.style.transform = ''; wrap.classList.remove('abierto'); }
+        dx = 0;
+      });
+
+      card.addEventListener('click', () => {
+        // Si estaba abierto, un toque lo cierra.
+        if (wrap.classList.contains('abierto')) { card.style.transform = ''; wrap.classList.remove('abierto'); }
+      });
+
+      wrap.querySelector('.cat-edit').addEventListener('click', () => {
+        const prod = catalogo.find(x => String(x.codigo_barras) === String(cod));
+        if (prod) abrirCatalogoModal(prod);
+      });
+    });
   }
 
   function poblarSelect(id, valores, etiquetaTodos) {

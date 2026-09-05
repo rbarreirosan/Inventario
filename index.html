@@ -150,12 +150,8 @@
       <select id="filtro-categoria"></select>
     </div>
     <div class="cat-count" id="catalogo-total">—</div>
-    <div class="tabla-wrap">
-      <table>
-        <thead><tr><th>Producto</th><th>Marca</th><th>Categoría</th><th>Present.</th><th>Precio</th><th>Código</th></tr></thead>
-        <tbody id="catalogo-body"></tbody>
-      </table>
-    </div>
+    <p class="hist-sub">Desliza una tarjeta hacia la derecha para <b>editar</b> el producto.</p>
+    <div id="catalogo-lista" class="cat-lista"></div>
   </section>
 
   <!-- ============ PANTALLA: HISTORIAL ============ -->
@@ -215,7 +211,7 @@
   <div class="modal-bg" id="btn-cerrar-cat-bg"></div>
   <div class="modal-card">
     <div class="modal-head">
-      <h3>Agregar al catálogo</h3>
+      <h3 id="cat-modal-title">Agregar al catálogo</h3>
       <button class="btn-volver" id="btn-cerrar-cat">Cerrar</button>
     </div>
     <div class="modal-form">

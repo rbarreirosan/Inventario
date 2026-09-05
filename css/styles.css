@@ -245,6 +245,28 @@ td.cod { color: var(--suave); font-variant-numeric: tabular-nums; }
 /* Selector "Generar PDF de:" en Resumen */
 .pdf-scope { width: 100%; height: 46px; border: 1.5px solid var(--linea); border-radius: var(--r-sm); padding: 0 12px; background: #fff; margin: 4px 0 12px; }
 
+/* ---------- Catálogo (tarjetas con deslizar para editar) ---------- */
+.cat-lista { display: flex; flex-direction: column; gap: 8px; }
+.cat-wrap {
+  position: relative; overflow: hidden; border-radius: var(--r-md);
+  background: #16A34A; /* verde: se ve al deslizar */
+}
+.cat-edit {
+  position: absolute; top: 0; left: 0; height: 100%; width: 104px;
+  background: #16A34A; color: #fff; font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.cat-card {
+  position: relative; background: var(--panel); border: 1px solid var(--linea);
+  border-radius: var(--r-md); padding: 12px 14px;
+  transition: transform .2s ease; touch-action: pan-y; will-change: transform;
+}
+.cat-card:active { background: var(--gris-suave); }
+.cat-nombre { font-size: 15px; font-weight: 700; }
+.cat-sub { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+.cat-meta { font-size: 13px; color: var(--suave); }
+.cat-cod { font-size: 12px; color: var(--suave); margin-top: 4px; font-variant-numeric: tabular-nums; }
+
 /* ---------- Bottom nav ---------- */
 .bottom-nav {
   position: fixed; left: 50%; transform: translateX(-50%); bottom: 0;
