@@ -16,7 +16,7 @@ window.CONFIG = {
   // El resto se tratan como "Proveedor". Esto es solo un respaldo:
   // el origen real viene de la columna "origen" del catálogo.
   MARCAS_ALMACEN: ['Eurolub', 'Gamez'],
-  MARCAS_PROVEEDOR: ['Chevron', 'Repsol', 'Valvoline', 'Castrol', 'Prestone', 'Bardhal'],
+  MARCAS_PROVEEDOR: ['Chevron', 'Repsol', 'Valvoline', 'Castrol', 'Prestone', 'Bardhal', 'Ecom'],
 
   // Texto que aparece en el PDF (a quién / de dónde).
   TALLER_NOMBRE: 'Taller — Inventario semanal'

@@ -12,7 +12,7 @@
  */
 const App = (() => {
   const SESION = 'inv_sesion';
-  const APP_VERSION = 'v21';
+  const APP_VERSION = 'v22';
 
   let catalogo = [];
   let porCodigo = new Map();
@@ -323,10 +323,8 @@ const App = (() => {
   }
 
   function construirEdicionNuevo(i) {
-    const marcas = [...(window.CONFIG.MARCAS_ALMACEN || []), ...(window.CONFIG.MARCAS_PROVEEDOR || [])];
     const selMarca = document.getElementById('nuevo-marca');
-    selMarca.innerHTML = `<option value="">Elige marca…</option>` +
-      marcas.map(m => `<option ${m === i.marca ? 'selected' : ''}>${esc(m)}</option>`).join('');
+    selMarca.innerHTML = opcionesMarca(i.marca);
     selMarca.onchange = () => {
       i.marca = selMarca.value;
       i.origen = (window.CONFIG.MARCAS_ALMACEN || []).includes(i.marca) ? 'Almacén' : 'Proveedor';
@@ -553,11 +551,10 @@ const App = (() => {
     const p = editar ? prefill : {};
     const codigoInicial = editar ? (p.codigo_barras || '') : (typeof prefill === 'string' ? prefill : '');
 
-    // Poblar marca
-    const marcas = [...(window.CONFIG.MARCAS_ALMACEN || []), ...(window.CONFIG.MARCAS_PROVEEDOR || [])];
-    document.getElementById('cat-marca').innerHTML =
-      `<option value="">Elige marca…</option>` +
-      marcas.map(m => `<option ${m === p.marca ? 'selected' : ''}>${esc(m)}</option>`).join('');
+    // Poblar marca (incluye las marcas que ya existen en el catálogo + la
+    // actual del producto, para que nunca se quede "atorado" si una marca no
+    // está en la lista fija de config.js).
+    document.getElementById('cat-marca').innerHTML = opcionesMarca(p.marca);
     // Sugerencias de categoría (las que ya existen)
     const cats = [...new Set(catalogo.map(x => x.categoria).filter(Boolean))].sort();
     document.getElementById('cat-categorias-list').innerHTML = cats.map(c => `<option value="${esc(c)}">`).join('');
@@ -807,6 +804,21 @@ const App = (() => {
 
   function nuevoProductoDesdeCodigo(codigo) {
     return { id: uid(), codigo_barras: (codigo || '').trim(), nombre: '', marca: '', origen: '', categoria: '', presentacion: '' };
+  }
+
+  // Construye las <option> del menú de marcas: une las marcas de config.js
+  // con TODAS las que ya existen en el catálogo (y la marca actual, al editar),
+  // sin repetir y ordenadas. Así el menú nunca deja fuera una marca en uso.
+  function opcionesMarca(seleccionada) {
+    const set = new Set([
+      ...(window.CONFIG.MARCAS_ALMACEN || []),
+      ...(window.CONFIG.MARCAS_PROVEEDOR || []),
+      ...catalogo.map(p => p.marca).filter(Boolean)
+    ]);
+    if (seleccionada) set.add(seleccionada);
+    const marcas = [...set].sort((a, b) => String(a).localeCompare(String(b), 'es'));
+    return `<option value="">Elige marca…</option>` +
+      marcas.map(m => `<option ${m === seleccionada ? 'selected' : ''}>${esc(m)}</option>`).join('');
   }
 
   function aRegistro(i) {
