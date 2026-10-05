@@ -146,6 +146,7 @@ ul { list-style: none; margin: 0; padding: 0; }
 .pill-rojo { background: var(--rojo-suave); color: var(--rojo); }
 .pill-gris { background: var(--gris-suave); color: var(--gris-prov); }
 .pill-marca { background: var(--tinta); color: #fff; }
+.pill-clave { background: var(--rojo-suave); color: var(--rojo); font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* ---------- Captura ---------- */
 .captura-head {

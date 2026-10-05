@@ -12,7 +12,7 @@
  */
 const App = (() => {
   const SESION = 'inv_sesion';
-  const APP_VERSION = 'v22';
+  const APP_VERSION = 'v23';
 
   let catalogo = [];
   let porCodigo = new Map();
@@ -299,6 +299,10 @@ const App = (() => {
     document.getElementById('captura-marca-pill').textContent = i.marca || '—';
     document.getElementById('captura-categoria').textContent = i.categoria || '—';
     document.getElementById('captura-presentacion').textContent = i.presentacion || '';
+    // Clave SAE: solo el número, como etiqueta (sin la leyenda "Clave SAE").
+    const claveEl = document.getElementById('captura-clave');
+    claveEl.textContent = i.clave || '';
+    claveEl.hidden = !i.clave;
     document.getElementById('captura-codigo').textContent = i.codigo_barras ? '#' + i.codigo_barras : 'sin código';
     const precioEl = document.getElementById('captura-precio');
     precioEl.textContent = fmtPrecio(i.precio);
