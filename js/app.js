@@ -12,7 +12,7 @@
  */
 const App = (() => {
   const SESION = 'inv_sesion';
-  const APP_VERSION = 'v23';
+  const APP_VERSION = 'v24';
 
   let catalogo = [];
   let porCodigo = new Map();

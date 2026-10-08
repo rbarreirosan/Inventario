@@ -135,7 +135,7 @@ const PDFReporte = (() => {
       y += 12;
 
       g.items.forEach(i => {
-        y = asegurarEspacio(doc, y, margen, 26);
+        y = asegurarEspacio(doc, y, margen, 48);
         // Nombre del producto (línea principal)
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
@@ -172,7 +172,16 @@ const PDFReporte = (() => {
             doc.text(sub, x0, y);
           }
         }
-        y += 16;
+        // Línea punteada divisoria: separa cada producto para seguir con la
+        // vista su cantidad (sobre todo cuando la lista es larga).
+        y += 10;
+        doc.setDrawColor(...COLORES.suave);
+        doc.setLineWidth(0.5);
+        if (doc.setLineDashPattern) doc.setLineDashPattern([1, 2], 0);
+        doc.line(x0, y, x0 + ancho, y);
+        if (doc.setLineDashPattern) doc.setLineDashPattern([], 0);
+        doc.setLineWidth(0.2);
+        y += 15;
       });
       y += 8;
     });
